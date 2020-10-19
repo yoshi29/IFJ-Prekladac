@@ -3,6 +3,10 @@
  * Autor: Filip Vágner, xvagne08
  */
 
+#pragma once
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifndef ERROR_H
 #define ERROR_H
 

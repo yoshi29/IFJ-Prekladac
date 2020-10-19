@@ -3,8 +3,6 @@
  * Autor: Filip Vágner, xvagne08
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include "error.h"
 
 void print_err(int err)
