@@ -9,3 +9,4 @@
 
 #include "error.h"
 #include "symtable.h"
+#include "parser.h"

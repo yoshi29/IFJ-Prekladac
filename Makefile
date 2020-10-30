@@ -4,7 +4,7 @@ PROJ=ifj20
 
 CC=gcc
 STD=-std=c99
-CFLAGS=-Wall -Wextra -Werror -pedantic
+CFLAGS=-Wall -Wextra #-Werror -pedantic
 
 .PHONY: all
 all:

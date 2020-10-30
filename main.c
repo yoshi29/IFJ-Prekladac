@@ -8,8 +8,11 @@
 int main() {
     //FILE* file = stdin;
 
-    /********************** JUST TESTS - CAN BE DELETED ****************************/
+    int retVal = parse();
+    print_err(retVal); //Zatím pro test
 
+    /********************** JUST TESTS - CAN BE DELETED ****************************/
+    /*
     TTree* tree = (TTree*)malloc(sizeof(struct tTree));
     TSInit(tree);
 
@@ -47,7 +50,7 @@ int main() {
     tree->root = NULL;
     tree->last = NULL;
     TSSearch(tree->root, "7");
-
+    */
     /********************** JUST TESTS - CAN BE DELETED ****************************/
 }
 

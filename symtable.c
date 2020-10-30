@@ -7,7 +7,7 @@
 
 void TSInit(TTree* tree) {
     tree->root = NULL;
-    tree->last = NULL;
+    tree->last = NULL; //TODO: Bude potřeba?
 }
 
 void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
