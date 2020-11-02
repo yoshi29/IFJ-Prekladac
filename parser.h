@@ -23,7 +23,7 @@ int parse();
 void insert_built_in_funcs(TNode** root);
 
 /**
- * Pravidlo <program> → package main <def_func_o> EOF
+ * Pravidlo <program> → package main EOL <def_func_o> EOF
  */
 int program();
 
@@ -76,8 +76,108 @@ int types_opt();
 
 
 /**
- * TODO: Dodělat zbytek pravidel pro body a upravit LL tabulku
  * Tělo funkce 
  * Pravidlo <body> → ε
+ * Pravidlo <body> → <if> EOL <body>
+ * Pravidlo <body> → <return> <body>
+ * Pravidlo <body> → <for> EOL <body>
+ * Pravidlo <body> → id <after_id> EOL <body>
+ * Pravidlo <body> → _ <ids_lo> = <assign_r> EOL <body>
  */
 int body();
+
+/**
+ * Návrat z funkce
+ * Pravidlo <return> → return <return_v> EOL
+ */
+int return_f();
+
+/**
+ * Vrácení hodnoty
+ * Pravidlo <return_v> → ε 
+ * Pravidlo <return_v> → id <ids_o>
+ * Pravidlo <return_v> → <expr> <exprs_o>
+ */
+int return_val();
+
+/**
+ * Nepovinné další identifikátory
+ * Pravidlo <ids_o> → ε 
+ * Pravidlo <ids_o> → , id <ids_o>
+ */
+int ids_opt();
+
+/**
+ * If
+ * Pravidlo <if> → if <expr> { EOL <body> } <else>
+ */
+int if_f();
+
+/**
+ * Else
+ * Pravidlo <else> → else { EOL <body> }
+ */
+int else_f();
+
+/**
+ * For
+ * Pravidlo <for> → for <def> ; <expr> ; <assign> { EOL <body> }
+ */
+int for_f();
+
+/**
+ * Definice ve for cyklu
+ * Pravidlo <def> → ε 
+ * Pravidlo <def> → id <def_var>
+ */
+int def();
+
+/**
+ * Definice proměnné
+ * Pravidlo <def_var> → ε
+ * Pravidlo <def> → id <def_var>
+ */
+int def_var();
+
+/**
+ * Neterminály, které mohou následovat za id v těle funkce
+ * Pravidlo <after_id> → <func>
+ * Pravidlo <after_id> → <def_var>
+ * Pravidlo <after_id> → <ids_lo>
+ */
+int after_id();
+
+/**
+ * Nepovinné další identifikátory na levé straně přiřazení
+ * Pravidlo <ids_lo> → ε
+ * Pravidlo <ids_lo> → , <ids_l> <ids_lo>
+ */
+int ids_l_opt();
+
+/**
+ * Identifikátor nebo _
+ * Pravidlo <ids_l> → id
+ * Pravidlo <ids_l> → _
+ */
+int ids_l();
+
+/**
+ * Volání funkce
+ * Pravidlo <func> → ( <params> )
+ */
+int func();
+
+/**
+ * Parametry funkce
+ * Pravidlo <params> → ε
+ * Pravidlo <params> → id <ids_lo>
+ */
+int params();
+
+/**
+ * Pravá strana přiřazení
+ * Pravidlo <assign_r> → <expr> <exprs_o>
+ * Pravidlo <assign_r> → id <func>
+ */
+int assign_r();
+
