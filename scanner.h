@@ -2,17 +2,27 @@
  * Typ tokenu
  */
 typedef enum {
+	STRING_T,
+	FLOAT_T,
+	INT_T,
     KEYWORD,
     DATA_TYPE,
     ID,
     UNDERSCORE,
-    EXPR,
     L_BRACKET,
     R_BRACKET,
     LC_BRACKET,
     RC_BRACKET,
+	EQ_T, // ==
+	NE_T, // !=
+	GT_T, // >
+	LT_T, // <
+	GE_T, // >=
+	LE_T, // <=
     PLUS,
     MINUS,
+	MUL,
+	DIV,
     EQUALS,
     COMMA,
     SEMICOLON,
