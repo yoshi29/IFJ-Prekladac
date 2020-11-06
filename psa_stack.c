@@ -105,11 +105,11 @@ PSA_Stack_Elem *stack_top_term(PSA_Stack *s)
     return NULL;
 }
 
-PSA_Stack_Elem* stack_top_reduce(PSA_Stack* s)
+PSA_Stack_Elem *stack_top_reduce(PSA_Stack *s)
 {
     if (s != NULL)
     {
-        PSA_Stack_Elem* current = s->topPtr;
+        PSA_Stack_Elem *current = s->topPtr;
         while (current != NULL)
         {
             if (current->reduce == 1)

@@ -6,7 +6,6 @@
 #pragma once
 #include "stdio.h"
 #include "stdlib.h"
-#include "stdbool.h"
 #include "string.h"
 
 #include "error.h"
@@ -21,7 +20,7 @@ typedef enum {
 
 typedef struct t_psa_stack_elem {
     PSA_Data_Type type; // typ
-    Token* token;   // ukazatel na token (pokud se jedná o token)
+    Token *token;   // ukazatel na token (pokud se jedná o token)
     int reduce; // příznak pro redukci
     struct t_psa_stack_elem *nextPtr;
 } PSA_Stack_Elem;
@@ -86,10 +85,10 @@ PSA_Stack_Elem *stack_top_term(PSA_Stack *s);
  * Vrací ukazatel na prvek, který je označen jako začátek redukce a je nejblíže vrcholu zásobníku
  * @param s Ukazatel na zásobník
  */
-PSA_Stack_Elem* stack_top_reduce(PSA_Stack *s);
+PSA_Stack_Elem *stack_top_reduce(PSA_Stack *s);
 
 /**
- * Dealokuje zásobník i všechny jeho prvky
+ * Odstraní všechny prvky ze zásobníku
  * @param s Ukazatel na zásobník
  */
 void stack_free(PSA_Stack *s);
