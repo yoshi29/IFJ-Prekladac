@@ -5,21 +5,6 @@
 
 #include "psa.h"
 
-// ==== SMAZAT ====
-// VSTUP:   i * ( i - int ) EOL
-tokenType t_types[] = { ID, MUL, L_BRACKET, ID, MINUS, INT_T, R_BRACKET, EOL_T };
-int tokenindex = 0;
-Token *token;
-
-Token *test_get_next()
-{
-    token->type = t_types[tokenindex];
-
-    tokenindex++;
-    return token;
-}
-// ================
-
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -34,10 +19,6 @@ static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 
 int psa()
 {
-    // ==== SMAZAT ====
-    token = (Token *)malloc(sizeof(Token));
-    // ================
-
     int retVal;
 
     // Inicializace zásobníku
@@ -50,9 +31,9 @@ int psa()
     
     int check_function = 0;
 
-    Token *token = test_get_next();
+    token = test_get_next();
 
-    if (is_delimeter(token)) // Výraz je prázdný
+    if (is_delimiter(token)) // Výraz je prázdný
     {
         stack_pop(&stack);
         return -1;
@@ -62,7 +43,7 @@ int psa()
     
     retVal = SUCCESS;
 
-    while (current_elem->type != type_dollar || !is_delimeter(token))
+    while (current_elem->type != type_dollar || !is_delimiter(token))
     {
         int table_result = table_value(current_elem, token);
 
@@ -154,10 +135,6 @@ int psa()
     }
 
     stack_free(&stack);
-
-    // ==== SMAZAT ====
-    free(token);
-    // ================
 
     return retVal;
 }
@@ -271,7 +248,7 @@ int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
             break;
         case 20:
             exit = 1;
-            if (end->type == type_token && end->token->type == L_BRACKET && end == start) // E -> ( i )
+            if (end->type == type_token && end->token->type == L_BRACKET && end == start) // E -> ( E )
                 result = R_LBR_E_RBR;
             break;
         }
@@ -298,7 +275,7 @@ int is_operator(Token *token)
     return 0;
 }
 
-int is_delimeter(Token *token)
+int is_delimiter(Token *token)
 {
     // TODO: EOL nemusí nutně ukončovat výraz
     switch (token->type)
@@ -359,7 +336,7 @@ int table_value(PSA_Stack_Elem *elem, Token *token)
         default:
             break;
         }
-        if (is_delimeter(token))
+        if (is_delimiter(token))
             col = 6;
 
         if (row != -1 && col != -1)

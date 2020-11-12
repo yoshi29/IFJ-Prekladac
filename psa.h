@@ -57,7 +57,7 @@ int is_operator(Token *token);
  * @param token Ukazatel na token
  * @return Vrací 1 pokud token ukončuje PSA, jinak 0
  */
-int is_delimeter(Token *token);
+int is_delimiter(Token *token);
 
 /**
  * Najde pravidlo pro redukci
