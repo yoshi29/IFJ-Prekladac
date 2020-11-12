@@ -5,6 +5,9 @@
 
 #include "psa.h"
 
+extern Token* token;
+extern Token* test_get_next();
+
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -31,8 +34,6 @@ int psa()
     
     int check_function = 0;
 
-    token = test_get_next();
-
     if (is_delimiter(token)) // Výraz je prázdný
     {
         stack_pop(&stack);
@@ -45,6 +46,7 @@ int psa()
 
     while (current_elem->type != type_dollar || !is_delimiter(token))
     {
+        printf("TOKEN_VALUE: %s\n", token->value);
         int table_result = table_value(current_elem, token);
 
         if (table_result == X)

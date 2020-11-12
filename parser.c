@@ -11,8 +11,8 @@ Token* lastToken;
 
 // ------------- TODO: Smazat až bude get_next_token ze scanneru
 int index = 0; 
-tokenType t_types[] = {KEYWORD, KEYWORD, KEYWORD, ID, L_BRACKET, R_BRACKET, LC_BRACKET, EOL_T, RC_BRACKET, EOL_T, EOF_T};
-char* t_values[] = {"package", "main",   "func",  "main", "",      "",        "",         "",  "",         "",    ""};
+tokenType t_types[] = {KEYWORD, KEYWORD, KEYWORD, ID, L_BRACKET, R_BRACKET, LC_BRACKET, EOL_T, KEYWORD, ID, PLUS, INT_T, EOL_T, RC_BRACKET, EOL_T, EOF_T};
+char* t_values[] = {"package", "main",   "func",  "main", "",      "",        "",         "",  "return","a","",   "12",       "",    "",         "",    ""};
 //Volá se po úspěšném zpracování non-terminálu; pravděpodobně nikdy nevolat na konci definice funkce, vždy až po jejím volání
 //Pravidla, která mohou vést na epsilon budou nastavovat defaultně SUCCESS, pak musí následovat if (token, který tam správně má být, 
 //                                                               pokud není použita epsilon varianta) ... možná ne nejrychlejší, ale asi nejjednodušší
@@ -81,7 +81,7 @@ int def_func_opt() { //DONE ^^
 
     if (strcmp(token->value, "func") == 0) {
         retVal = def_func();
-        if (retVal != SUCCESS) return SUCCESS;
+        if (retVal != SUCCESS) return ERR_SYNTAX;
 
         if (token->type == EOL_T) {
             test_get_next();
@@ -114,7 +114,7 @@ int def_func() { //TODO: ALMOST DONE
                 if (token->type == LC_BRACKET && test_get_next()->type == EOL_T) {
                     test_get_next();
                     retVal = body();
-                    if (retVal != SUCCESS) return ERR_SYNTAX;
+                    if (retVal != SUCCESS) return ERR_SYNTAX;     
 
                     if (token->type == RC_BRACKET) retVal = SUCCESS;
                 }
@@ -205,6 +205,7 @@ int body() { //DONE ^^
     int retVal = SUCCESS;
 
     if (strcmp(token->value, "return") == 0) { //<body> → <return> <body>
+        test_get_next();
         retVal = return_f();
         if (retVal != SUCCESS) return ERR_SYNTAX;
         retVal = body();
@@ -246,12 +247,22 @@ int body() { //DONE ^^
 }
 
 int return_f() { //DONE ^^
-    if (return_val() == SUCCESS && token->type == EOL_T) return SUCCESS; //Počítá s tím, že inulý token byl return
-    else return ERR_SYNTAX;
+    if (return_val() == SUCCESS) {
+        if (token->type == EOL_T) {
+            printf("RETURN_F: %i\n", 0);
+        }
+        return SUCCESS; //Počítá s tím, že inulý token byl return
+    }
+    else {
+        printf("RETURN_F: %i\n", 2);
+        return ERR_SYNTAX;
+    }
 }
 
 int return_val() {
     int retVal = psa();
+    printf("RETURN_VAL: %i\n", retVal);
+
     if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     retVal = ids_opt();
@@ -265,7 +276,7 @@ int ids_opt() {
     if (token->type == COMMA) {
         test_get_next();
         retVal = psa();
-        if (retVal == -1 || retVal = ERR_SYNTAX) return ERR_SYNTAX;
+        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         retVal = ids_opt();
     }
 
@@ -297,7 +308,8 @@ int for_f() {
 
     if (retVal == SUCCESS && token->type == SEMICOLON) {
         test_get_next();
-        if (psa() == -1) return ERR_SYNTAX;
+        retVal = psa();
+        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         if (token->type == SEMICOLON) {
             test_get_next();
             retVal = assign();
@@ -327,6 +339,7 @@ int def_var() {
     if (token->type == DEF) {
         test_get_next();
         retVal = psa();
+        if (retVal == -1) retVal = ERR_SYNTAX;
     }
 
     return retVal;
@@ -380,6 +393,7 @@ int func() { //DONE ^^
     if (token->type == L_BRACKET) {
         test_get_next();
         retVal = params();
+        if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
     }
 
     printf("FUNC: %i\n", retVal);
@@ -388,6 +402,7 @@ int func() { //DONE ^^
 
 int params() {
     int retVal = psa();
+    if (retVal == -1) return SUCCESS;
     if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     retVal = ids_opt(); //TODO: Bude použítí ok?
