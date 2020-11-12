@@ -11,8 +11,8 @@ Token* lastToken;
 
 // ------------- TODO: Smazat až bude get_next_token ze scanneru
 int index = 0; 
-tokenType t_types[] = {KEYWORD, KEYWORD, KEYWORD, ID, L_BRACKET, R_BRACKET, LC_BRACKET, EOL_T, /**/ID, L_BRACKET, R_BRACKET, EOL_T, RC_BRACKET, EOL_T, EOF_T};
-char* t_values[] = {"package", "main",   "func",  "main", "",      "",        "",         "",  /**/"a", "",       "",        "",    "",         "",    ""};
+tokenType t_types[] = {KEYWORD, KEYWORD, KEYWORD, ID, L_BRACKET, R_BRACKET, LC_BRACKET, EOL_T, RC_BRACKET, EOL_T, EOF_T};
+char* t_values[] = {"package", "main",   "func",  "main", "",      "",        "",         "",  "",         "",    ""};
 //Volá se po úspěšném zpracování non-terminálu; pravděpodobně nikdy nevolat na konci definice funkce, vždy až po jejím volání
 //Pravidla, která mohou vést na epsilon budou nastavovat defaultně SUCCESS, pak musí následovat if (token, který tam správně má být, 
 //                                                               pokud není použita epsilon varianta) ... možná ne nejrychlejší, ale asi nejjednodušší
@@ -28,6 +28,7 @@ int parse() {
     symTable = (TTree*)malloc(sizeof(struct tTree));
     TSInit(symTable);
     token = malloc(sizeof(Token));
+    lastToken = malloc(sizeof(Token));
 
     insert_built_in_funcs(&(symTable->root));
 
@@ -96,7 +97,8 @@ int def_func() { //TODO: ALMOST DONE
     int retVal = ERR_SYNTAX;
 
     if (strcmp(token->value, "func") == 0 && test_get_next()->type == ID) {
-        lastToken = token; // Uloží minulý token, který může být názvem funkce
+        lastToken->type = token->type; // Uloží minulý token, který může být názvem funkce
+        lastToken->value = token->value;
 
         if (test_get_next()->type == L_BRACKET) { 
             test_get_next();
@@ -232,6 +234,7 @@ int body() { //DONE ^^
         test_get_next();
         retVal = ids_l_opt();
         if (retVal != SUCCESS && token->type != EQUALS) return ERR_SYNTAX;
+        test_get_next();
         retVal = assign_r();
         if (retVal != SUCCESS && token->type != EOL_T) return ERR_SYNTAX;
         test_get_next();
@@ -248,16 +251,21 @@ int return_f() { //DONE ^^
 }
 
 int return_val() {
-    int retVal = SUCCESS;
-    //TODO: Toto celé asi přenechat na řešení Filipovi
+    int retVal = psa();
+    if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
+
+    retVal = ids_opt();
+    if (retVal == -1) retVal = SUCCESS;
     return retVal;
 }
 
-int ids_opt() { //Hotovo, ale bude třeba? Nebude to řešit Filip?
+int ids_opt() { 
     int retVal = SUCCESS;
     
-    if (token->type == COMMA && test_get_next()->type == ID) {
+    if (token->type == COMMA) {
         test_get_next();
+        retVal = psa();
+        if (retVal == -1 || retVal = ERR_SYNTAX) return ERR_SYNTAX;
         retVal = ids_opt();
     }
 
@@ -266,20 +274,43 @@ int ids_opt() { //Hotovo, ale bude třeba? Nebude to řešit Filip?
 }
 
 int if_f() {
-    int retVal = ERR_SYNTAX;
     //Minulý token byl if
-    //TODO: Následuje <expr> ...
+    int retVal = psa();
+    if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+
+    if (token->type == LC_BRACKET && test_get_next()->type == EOL_T) {
+        test_get_next();
+        retVal = body();
+        if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
+
+        if (token->type != RC_BRACKET) return ERR_SYNTAX;
+
+        retVal = else_f();
+    }
+    else retVal = ERR_SYNTAX;
+
+    return retVal;
 }
 
 int for_f() {
-    //Minulý token byl for
     int retVal = def();
-    if (retVal != SUCCESS && token->type != SEMICOLON) return ERR_SYNTAX;
 
-    //TODO: Řešení výrazu
+    if (retVal == SUCCESS && token->type == SEMICOLON) {
+        test_get_next();
+        if (psa() == -1) return ERR_SYNTAX;
+        if (token->type == SEMICOLON) {
+            test_get_next();
+            retVal = assign();
+
+        }
+        else return ERR_SYNTAX;
+    }
+    else return ERR_SYNTAX;
+
+    return retVal;
 }
 
-int def() {
+int def() { //Asi hotovo
     int retVal = SUCCESS;
 
     if (token->type == ID) {
@@ -294,7 +325,8 @@ int def_var() {
     int retVal = ERR_SYNTAX;
 
     if (token->type == DEF) {
-        //TODO: Zpracování výrazu
+        test_get_next();
+        retVal = psa();
     }
 
     return retVal;
@@ -355,20 +387,35 @@ int func() { //DONE ^^
 }
 
 int params() {
-    int retVal = SUCCESS;
-    //Možná předat Filipovi
+    int retVal = psa();
+    if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
+
+    retVal = ids_opt(); //TODO: Bude použítí ok?
+    if (retVal == -1) retVal = SUCCESS;
+
+    return retVal;
 }
 
 int assign_r() {
-    int retVal = ERR_SYNTAX;
+    int retVal = psa();
+    if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
-    //TODO: Nějak předat Filipovi pro vracení výrazů
+    retVal = ids_opt(); //TODO: Bude v pořádku zde použít ids_opt();
 
-    if (token->type == ID) {
+    return retVal;
+}
+
+int assign() {
+    int retVal = SUCCESS;
+
+    if (token->type == ID || token->type == UNDERSCORE) {
         test_get_next();
-        retVal = func();
+        if (ids_l_opt() == ERR_SYNTAX) return ERR_SYNTAX;
+        if (token->type == EQUALS) {
+            test_get_next();
+            retVal = assign_r();
+        }
     }
-
     return retVal;
 }
 

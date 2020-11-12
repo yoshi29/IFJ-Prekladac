@@ -10,6 +10,8 @@
 #include "error.h"
 #include "symtable.h"
 #include "scanner.h"
+#include "psa.h"
+
 
 /**
  * Hlavní funkce syntaktického analyzátoru
@@ -180,4 +182,12 @@ int params();
  * Pravidlo <assign_r> → id <func>
  */
 int assign_r();
+
+/**
+ * Přiřazení
+ * Pravidlo <assign> → id <ids_lo> = <assign_r>
+ * Pravidlo <assign> → _ <ids_lo> = <assign_r>
+ * Pravidlo <assign> → ε
+ */
+int assign();
 
