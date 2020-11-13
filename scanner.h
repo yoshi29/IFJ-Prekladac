@@ -1,4 +1,14 @@
+/**
+ * Projekt: Implementace překladače imperativního jazyka IFJ20
+ * Autor: Jana Stopková, xstopk01
+ * Autor: Tomáš Matušák, xmatus34
+ */
+
 #pragma once
+#include "stdio.h"
+#include "stdlib.h"
+#include "error.h"
+#include "scanner.h"
 
 /**
  * Typ tokenu
@@ -40,4 +50,6 @@ typedef enum {
 typedef struct token {
     tokenType type;
     char* value;
+    int DecNmber;
+    float FloatNumber;
 } Token;
