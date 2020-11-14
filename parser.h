@@ -17,7 +17,7 @@
  * Hlavní funkce syntaktického analyzátoru
  * @return 1-99 v případě chyby, 0 jinak
  */
-int parse();
+int parse(FILE* file);
 
 /**
  * Vloží do tabulky symbolů vestavěné funkce

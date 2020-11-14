@@ -2,139 +2,203 @@
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Tomáš Matušák, xmatus34
  */
-#include <scanner.h>
+#include "scanner.h"
 
-FILE *SourceCode;
+extern Token* token;
+FILE *sourceCode;
 char readToken[200];
+int state = START_STATE;
 
-void GetSouceCode(FILE *Code){
-    SourceCode = Code;
+void getSourceCode(FILE *code){
+    sourceCode = code;
 }
 
+int getNextToken(){
 
-
-int GetNextToken(Token *token){
-
-    if (SourceCode == NULL){
+    if (sourceCode == NULL){
         return ERR_COMPILER;
     }
 
-    else
-    {
-        fopen(SourceCode,r);
-        while(fgets(readToken,1,SourceCode)!= NULL){
-            switch (readToken)
-            {
-                case '(':
-                    token->type = R_BRACKET;
-                    return SUCCESS;    
+    int c;
+    string s;
 
-                    break;
-            
-                case ')':
-                    token->type = L_BRACKET;
-                    return SUCCESS;
+    if (strInit(&s) == 1)
+        return ERR_COMPILER; //TODO: Je to správná chyba?
 
-                    break;
-
-                case '{':
-                    token->type = LC_BRACKET;
-                    return SUCCESS;
-
-                    break;
-            
-                case '}':
-                    token->type = RC_BRACKET;
-                    return SUCCESS;
-
-                    break;
-            
-                case ';':
-                    token->type = SEMICOLON; 
-                    return SUCCESS;
-                
-                    break;
-            
-                case '+':
-                    tekon->type = PLUS;
-                    return SUCCESS;
-                
-                    break;
-            
-                case '-':
-                    token->type = MINUS;
-                    return SUCCESS;
-                
-                    break;
-            
-                case '*':
-                    token->type = MUL;
-                    return SUCCESS;
-                
-                    break;
-            
-                case '<':
-                   fgets(readToken,1,SourceCode);
-                    if (readToken == '=')
-                    {
-                        token->type  = LE_T;
-                        return SUCCESS;
-                    }
-                    else
-                    {
-                        token->type = LT_T;
-                        ungetc(readToken,SourceCode);
-                        return SUCCESS;
-                    }
-                
-                    break;
-            
-                case '>':
-                   fgets(readToken,1,SourceCode);
-                    if (readToken == '=')
-                    {
-                        token->type  = GE_T;
-                        return SUCCESS;
-                    }
-                    else
-                    {
-                        token->type = GT_T;
-                        ungetc(readToken,SourceCode);
-                        return SUCCESS;
-                    }
-                
-                    break;
-            
-                case ',':
-                    token->type = COMMA;
-                
-                    break;
-                
-                case '!':
-                    fgets(readToken,1,SourceCode);
-                    if (readToken == '=')
-                    {
-                        token->type  = NE_T;
-                        return SUCCESS;
-                    }
-                    else
-                    {
-                        ungetc(readToken,SourceCode);
-                        return ERR_LEXICAL;
-                    }
-                
-                    break;
-
-            default:
-
-                if(strchr("123456789",readToken) != NULL ){
-                        char Numbers[200]
-
+    while((c = getc(sourceCode)) != EOF) {
+        switch (state)
+        {
+            case START_STATE:
+                if (c == '(') token->type = L_BRACKET;
+                else if (c == ')') token->type = R_BRACKET;
+                else if (c == '{') token->type = LC_BRACKET;
+                else if (c == '}') token->type = RC_BRACKET;
+                else if (c == ';') token->type = SEMICOLON;
+                else if (c == '+') token->type = PLUS; //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
+                else if (c == '-') token->type = MINUS; //TODO: Nastavit stav, kdy to může být -, anebo záporné číslo; řešit asi podobně jako třeba LE_T_STATE
+                else if (c == '*') token->type = MUL;
+                else if (c == ',') token->type = COMMA;
+                else if (c == '/') state = COMMENT_STATE; //TODO: Může být řádkovým/blokovým komentářem, anebo se jedná o dělení
+                else if (c == '=') state = EQ_T_STATE;
+                else if (c == '<') state = LE_T_STATE;
+                else if (c == '>') state = GE_T_STATE;
+                else if (c == ':') state = DEF_STATE;
+                else if (isspace(c)) {
+                    if (c == '\n') token->type = EOL_T;
+                    else continue; //Přeskočení mezery
                 }
-                break;
-            }
-        }
+                else if (isdigit(c)) { 
+                    strAddChar(&s, c);
+                    if ((c = getc(sourceCode)) == '\n') { //Následuje konec řádku => konec čísla
+                        token->type = INT_T;
+                        token->intNumber = atoi(strGetStr(&s));
+                        ungetc(c, sourceCode);
+                        state = START_STATE;
+                    }
+                    else {
+                        state = INT_STATE;
+                    }
+                }
+            break;
 
+            case EQ_T_STATE: //f9 nebo f18
+                if (c == '=') token->type = EQ_T;
+                else {
+                    token->type = EQUALS;
+                    ungetc(c, sourceCode);
+                }
+                state = START_STATE;
+            break;
+
+            case LE_T_STATE: //f16 nbo f17
+                if (c == '=') token->type = LE_T;
+                else {
+                    token->type = LT_T;
+                    ungetc(c, sourceCode);
+                }
+                state = START_STATE;
+            break;
+
+            case GE_T_STATE: //f19 nebo f20
+                if (c == '=') token->type = GE_T;
+                else {
+                    token->type = GT_T;
+                    ungetc(c, sourceCode);
+                }
+                state = START_STATE;
+            break;
+
+            case NE_T_STATE: //v2 nebo v21
+                if (c == '=') token->type = NE_T;
+                else {
+                    ungetc(c, sourceCode);
+                    return ERR_LEXICAL;
+                }
+                state = START_STATE;
+            break;
+
+            case DEF_STATE: //v1 nebo f15
+                if (c == '=') token->type = DEF;
+                else {
+                    ungetc(c, sourceCode);
+                    return ERR_LEXICAL;
+                }
+                state = START_STATE;
+            break;
+
+            case INT_STATE: //f3
+                if (isdigit(c)) {
+                    if (strCmpConstStr(&s, "0") == 0) return ERR_LEXICAL; //Číslo začíná na 0 a nenásleduje ./e/E => chyba
+                    strAddChar(&s, c);
+                }
+                else if (c == '.') {
+                    if (isSpaceNext() == 1) return ERR_LEXICAL;
+                    state = FLOAT_STATE;
+                    strAddChar(&s, c);
+                }
+                else if (c == 'e' || c == 'E') {
+                    if (isSpaceNext() == 1) return ERR_LEXICAL; //Nesmí končit na ./e/E
+                    state = FLOAT_EXPONENT_STATE;
+                    strAddChar(&s, c);
+                }
+                else { //Konec celého čísla
+                    newToken(INT_T, s, c);
+                }
+            break;
+
+            case FLOAT_STATE: //v7
+                if (isdigit(c)) {
+                    strAddChar(&s, c);
+                    state = FLOAT_EXPONENT2_STATE;
+                }
+                else {
+                    newToken(FLOAT_T, s, c);
+                }
+            break;
+
+            case FLOAT_EXPONENT_STATE: //v4
+                if (c == '+' || c == '-') { //TODO: Tady buď bude chyba, pokud následující znak bude whitespace, anebo konec tokenu a unget; které?
+                    strAddChar(&s, c);
+                    state = SIGNED_FLOAT_STATE;
+                }
+                else if (isdigit(c)) {
+                    strAddChar(&s, c);
+                }
+                else {
+                    newToken(FLOAT_T, s, c);
+                }
+            break;
+
+            case FLOAT_EXPONENT2_STATE: //f4
+                if (c == 'e' || c == 'E') {
+                    if (isSpaceNext() == 1) return ERR_LEXICAL; //Nesmí končit na ./e/E
+                    state = FLOAT_EXPONENT_STATE;
+                    strAddChar(&s, c);
+                }
+                if (isdigit(c)) {
+                    strAddChar(&s, c);
+                }
+                else {
+                    newToken(FLOAT_T, s, c);
+                }
+            break;
+        }
+        if (state == START_STATE) {
+            return SUCCESS;
+        }
     }
-    
+
+    if (c == EOF) {
+        strFree(&s);
+        token->type = EOF_T;
+        return SUCCESS;
+    }
+    else return ERR_LEXICAL;
+}
+
+int isSpaceNext() {
+    int c = getc(sourceCode);
+    int retVal;
+    if (isspace(c) == 0) { //Není whitespace
+        retVal = 0;
+    }
+    else retVal = 1;
+    ungetc(c, sourceCode);
+    return retVal;
+}
+
+void newToken(tokenType type, string s, int c) { //TODO: Upravit jak bude třeba
+    token->type = type;
+    if (type == INT_T) {
+        token->intNumber = atoi(strGetStr(&s));
+    }
+    else if (type == FLOAT_T) {
+        token->floatNumber = atof(strGetStr(&s));
+    }
+    else {
+        token->value = strGetStr(&s);
+    }
+    state = START_STATE;
+    ungetc(c, sourceCode);
+    strFree(&s);
 }

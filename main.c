@@ -6,9 +6,9 @@
 #include "main.h"
 
 int main() {
-    //FILE* file = stdin;
+    FILE* file = stdin;
 
-    int retVal = parse();
+    int retVal = parse(file);
     printf(">> PARSING: %i\n", retVal);
     print_err(retVal); //Zatím pro test
 

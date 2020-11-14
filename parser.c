@@ -24,15 +24,26 @@ Token* test_get_next() {
 }
 // -------------
 
-int parse() {
+int parse(FILE* file) {
     symTable = (TTree*)malloc(sizeof(struct tTree));
     TSInit(symTable);
+
     token = malloc(sizeof(Token));
     lastToken = malloc(sizeof(Token));
 
     insert_built_in_funcs(&(symTable->root));
+    getSourceCode(file);
 
-    int retVal = program();
+    do {
+        if (getNextToken() != ERR_LEXICAL) {
+            printf("TOKEN: %i\n", token->type);
+        }
+        else {
+            return ERR_LEXICAL;
+        }
+    } while (token->type != EOF_T);
+
+    int retVal = 0; //int retVal = program();
     return retVal;
 }
 
