@@ -176,33 +176,24 @@ int getNextToken(){
                     ungetc(c,sourceCode);
                     state = START_STATE;
                 }
-                    
             break;
-            case ONE_LINE_C_STATE:  //k2
-                if (c != EOL) {
-                    strAddChar(&s,c);
-                }
-                else if (c == EOL){
-                    newToken(COMMENT,s,c);
+
+            case ONE_LINE_C_STATE: //k2
+                if (c == '\n') {
+                    state = START_STATE;
                 }
             break;
-            case M_LINE_C_STATE:
-                if (c != '*'){
-                    strAddChar(&s,c);
-                }
-                else if (c == '*'){ //k4
-                    strAddChar(&s,c);
+
+            case M_LINE_C_STATE: //k4
+                if (c == '*'){ 
                     c = getc(sourceCode);
                     if (c == '/'){
-                        newToken(COMMENT,s,c);    
-                    }
-                    else {
-                        strAddChar(&s,c);
-                    }    
+                        state = START_STATE;
+                    } 
                 }
             break;
         }
-        }
+
         if (state == START_STATE) {
             return SUCCESS;
         }

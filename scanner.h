@@ -61,7 +61,6 @@ typedef enum {
     /*25*/ DEF,
     /*26*/ EOL_T,
     /*27*/ EOF_T,
-    /*28*/ COMMENT,
 } tokenType;
 
 /**
