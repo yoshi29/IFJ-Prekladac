@@ -34,12 +34,14 @@ int getNextToken(){
                 else if (c == '{') token->type = LC_BRACKET;
                 else if (c == '}') token->type = RC_BRACKET;
                 else if (c == ';') token->type = SEMICOLON;
-                else if (c == '+') token->type = PLUS; //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
+                //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
+                else if (c == '+') {
+                    token->type = PLUS;
+                    } 
                 else if (c == '-') token->type = MINUS; //TODO: Nastavit stav, kdy to může být -, anebo záporné číslo; řešit asi podobně jako třeba LE_T_STATE
                 else if (c == '*') token->type = MUL;
                 else if (c == ',') token->type = COMMA;
-                else if (c == '/') state = COMMENT_STATE; //TODO: Může být řádkovým/blokovým komentářem, anebo se jedná o dělení
-                else if (c == '=') state = EQ_T_STATE;
+                else if (c == '/') state = COMMENT_STATE; 
                 else if (c == '<') state = LE_T_STATE;
                 else if (c == '>') state = GE_T_STATE;
                 else if (c == ':') state = DEF_STATE;
@@ -162,6 +164,44 @@ int getNextToken(){
                     newToken(FLOAT_T, s, c);
                 }
             break;
+            case COMMENT_STATE: //k1
+                if(c == '/'){   
+                    state = ONE_LINE_C_STATE;
+                    }     
+                else if (c == '*'){ //k3
+                    state = M_LINE_C_STATE;            
+                    }
+                else {
+                    token->type = DIV;
+                    ungetc(c,sourceCode);
+                    state = START_STATE;
+                }
+                    
+            break;
+            case ONE_LINE_C_STATE:  //k2
+                if (c != EOL) {
+                    strAddChar(&s,c);
+                }
+                else if (c == EOL){
+                    newToken(COMMENT,s,c);
+                }
+            break;
+            case M_LINE_C_STATE:
+                if (c != '*'){
+                    strAddChar(&s,c);
+                }
+                else if (c == '*'){ //k4
+                    strAddChar(&s,c);
+                    c = getc(sourceCode);
+                    if (c == '/'){
+                        newToken(COMMENT,s,c);    
+                    }
+                    else {
+                        strAddChar(&s,c);
+                    }    
+                }
+            break;
+        }
         }
         if (state == START_STATE) {
             return SUCCESS;

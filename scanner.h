@@ -26,7 +26,8 @@
 #define SIGNED_FLOAT_STATE 10
 #define FLOAT_EXPONENT_STATE 11
 #define FLOAT_EXPONENT2_STATE 12
-
+#define ONE_LINE_C_STATE 13
+#define M_LINE_C_STATE 14
 
 /**
  * Typ tokenu
@@ -60,6 +61,7 @@ typedef enum {
     /*25*/ DEF,
     /*26*/ EOL_T,
     /*27*/ EOF_T,
+    /*28*/ COMMENT,
 } tokenType;
 
 /**
