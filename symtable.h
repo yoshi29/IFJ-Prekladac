@@ -15,11 +15,11 @@
  * Typ identifikátoru
  */
 typedef enum {
-    INT,
-    FLOAT,
-    STRING,
-    NIL,
-    FUNC
+    /*0*/ INT,
+    /*1*/ FLOAT,
+    /*2*/ STRING,
+    /*3*/ NIL,
+    /*4*/ FUNC
 } nodeType;
 
 /**
@@ -40,6 +40,11 @@ typedef struct tTree {
     struct tNode* root;
     struct tNode* last;
 } TTree;
+
+typedef struct tStack {
+    struct tNode *node;
+    struct tStack* next;
+} TStack;
 
 /**
  * Inicializuje tabulku symbolů
@@ -69,3 +74,18 @@ TNode* TSSearch(TNode* root, char* key);
  * Zruší celý strom
  */
 void TSDispose(TNode* root);
+
+/**
+ * Vloží prvek do tabulky symbolů pouze pokud se v tabulce symbolů doposud nenachází
+ * @param root Ukazatel na kořen stromu
+ * @param key Klíč nového uzlu
+ * @param type Typ nového uzlu
+ * @param isDefined Byl identifikátor nového uzlu definovaný?
+ * @param param Počet parametrů (jde-li o funkci), Pozice parametru (jde-li o parametr funkce)
+ * @param localTS Ukazatel na tabulku symbolů lokální úrovně (jde-li o funkci)
+ */
+void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
+
+void PushFrame(TStack* stackItem);
+
+void PopFrame(TStack* stackItem);

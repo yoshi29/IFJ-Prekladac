@@ -46,7 +46,7 @@ int psa()
 
     while (current_elem->type != type_dollar || !is_delimiter(token))
     {
-        printf("TOKEN_VALUE: %s\n", token->value);
+        //printf("TOKEN_VALUE: %s\n", token->value);
         int table_result = table_value(current_elem, token);
 
         if (table_result == X)

@@ -46,7 +46,6 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
 
 TNode* TSSearch(TNode* root, char* key) {
     if (root == NULL) return NULL;
-
     int cmp = strcmp(key, root->key);
 
     if (cmp < 0) {
@@ -62,8 +61,6 @@ TNode* TSSearch(TNode* root, char* key) {
 
 void TSDispose(TNode* root) {
     if (root != NULL) {
-        printf("ROOT\n");
-
         TSDispose(root->lptr);
         TSDispose(root->rptr);
 
@@ -75,4 +72,28 @@ void TSDispose(TNode* root) {
         free(root);
         root = NULL;
     }
+}
+
+void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
+    if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice
+        print_err(ERR_SEM_DEF);
+        exit(ERR_SEM_DEF); //TODO: Hned exit, anebo vracet hodnotu a všude to kontrolovat?
+    }
+    else TSInsert(root, key, type, isDefined, param, localTS);
+}
+
+void PushFrame(TStack* stack) {
+    TStack *newStackTop = malloc(sizeof(struct tStack));
+    if (newStackTop == NULL) {
+        print_err(ERR_COMPILER);
+        exit(ERR_COMPILER);
+    }
+
+    newStackTop->next = stack;
+    newStackTop->node = NULL;
+    *stack = *newStackTop;
+}
+
+void PopFrame(TStack* stack) {
+
 }

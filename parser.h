@@ -29,6 +29,8 @@ void insert_built_in_funcs(TNode** root);
  */
 int program();
 
+nodeType getNodeType(char* dataType);
+
 /**
  * Nepovinná definice funkce
  * Pravidlo <def_func_o> → <def_func> EOL <def_func_o>
@@ -47,14 +49,14 @@ int def_func();
  * Pravidlo <f_params> → id <type> <f_params_o>
  * Pravidlo <f_params> → ε
  */
-int formal_params();
+int formal_params(int* paramCount, TNode** localTS);
 
 /**
  * Nepovinné formální parametry funkce
  * Pravidlo <f_params_o> → , id <type> <f_params_o>
  * Pravidlo <f_params_o> → ε
  */
-int formal_params_opt();
+int formal_params_opt(int* paramCount, TNode** localTS);
 
 /**
  * Nepovinné návratové typy funkce
