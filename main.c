@@ -8,9 +8,33 @@
 int main() {
     FILE* file = stdin;
 
+    // Testování scanneru
+    // ./ifj20 < source.go
+    /*
+    getSourceCode(file);
+    token = malloc(sizeof(struct token));
+    strInit(&(token->string));
+
+    char *str_token[] = { "STRING_T", "FLOAT_T", "INT_T","KEYWORD","DATA_TYPE_INT","DATA_TYPE_FLOAT","DATA_TYPE_NIL","DATA_TYPE_STRING","ID","UNDERSCORE",
+        "L_BRACKET","R_BRACKET","LC_BRACKET","RC_BRACKET","EQ_T","NE_T","GT_T","LT_T","GE_T","LE_T","PLUS","MINUS","MUL","DIV","EQUALS","COMMA",
+        "SEMICOLON","ASSIGN","DEF","EOL_T" };
+
+    int retval = getNextToken();
+    printf("Type [Value]\n=============\n");
+    while (token->type != EOF_T && retval == SUCCESS) {
+        printf("%s", str_token[token->type]);
+        if (token->type == STRING_T || token->type == KEYWORD || token->type == ID)
+            printf(" [%s]", token->string.str);
+        printf("\n");
+        retval = getNextToken();
+    }
+    printf("- Návratový kód: %d\n", retval);
+    */
+    
     int retVal = parse(file);
     printf(">> PARSING: %i\n", retVal);
     print_err(retVal); //Zatím pro test
+    
 
     /********************** JUST TESTS - CAN BE DELETED ****************************/
     /*

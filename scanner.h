@@ -14,20 +14,30 @@
 #include "str.h"
 #include "ctype.h"
 
-#define START_STATE 1
-#define EQ_T_STATE 2
-#define NE_T_STATE 3
-#define LE_T_STATE 4
-#define GE_T_STATE 5
-#define DEF_STATE 6
-#define COMMENT_STATE 7
-#define INT_STATE 8
-#define FLOAT_STATE 9
-#define SIGNED_FLOAT_STATE 10
-#define FLOAT_EXPONENT_STATE 11
-#define FLOAT_EXPONENT2_STATE 12
-#define ONE_LINE_C_STATE 13
-#define M_LINE_C_STATE 14
+extern struct token *token;
+
+typedef enum {
+    START_STATE,
+    EQ_T_STATE,
+    NE_T_STATE,
+    LE_T_STATE,
+    GE_T_STATE,
+    DEF_STATE,
+    COMMENT_STATE,
+    ONE_LINE_C_STATE,
+    M_LINE_C_STATE,
+    M_LINE_C_END_STATE,
+    INT_STATE,
+    FLOAT_STATE,
+    SIGNED_FLOAT_STATE,
+    FLOAT_EXPONENT_STATE,
+    FLOAT_EXPONENT2_STATE,
+    TEXT_STATE,
+    STRING_STATE,
+    ESCAPE_STATE,
+    HEX_ESCAPE_STATE,
+    HEX_ESCAPE_STATE_2
+} states;
 
 /**
  * Typ tokenu
@@ -37,30 +47,33 @@ typedef enum {
     /*1*/ FLOAT_T,
     /*2*/ INT_T,
     /*3*/ KEYWORD,
-    /*4*/ DATA_TYPE,
-    /*5*/ ID,
-    /*6*/ UNDERSCORE,
-    /*7*/ L_BRACKET,
-    /*8*/ R_BRACKET,
-    /*9*/ LC_BRACKET,
-    /*10*/ RC_BRACKET,
-    /*11*/ EQ_T, // ==
-    /*12*/ NE_T, // !=
-    /*13*/ GT_T, // >
-    /*14*/ LT_T, // <
-    /*15*/ GE_T, // >=
-    /*16*/ LE_T, // <=
-    /*17*/ PLUS,
-    /*18*/ MINUS,
-    /*19*/ MUL,
-    /*20*/ DIV,
-    /*21*/ EQUALS,
-    /*22*/ COMMA,
-    /*23*/ SEMICOLON,
-    /*24*/ ASSIGN,
-    /*25*/ DEF,
-    /*26*/ EOL_T,
-    /*27*/ EOF_T,
+    /*4*/ DATA_TYPE_INT,
+    /*5*/ DATA_TYPE_FLOAT,
+    /*6*/ DATA_TYPE_NIL,
+    /*7*/ DATA_TYPE_STRING,
+    /*8*/ ID,
+    /*9*/ UNDERSCORE,
+    /*10*/ L_BRACKET,
+    /*11*/ R_BRACKET,
+    /*12*/ LC_BRACKET,
+    /*13*/ RC_BRACKET,
+    /*14*/ EQ_T, // ==
+    /*15*/ NE_T, // !=
+    /*16*/ GT_T, // >
+    /*17*/ LT_T, // <
+    /*18*/ GE_T, // >=
+    /*19*/ LE_T, // <=
+    /*20*/ PLUS,
+    /*21*/ MINUS,
+    /*22*/ MUL,
+    /*23*/ DIV,
+    /*24*/ EQUALS,
+    /*25*/ COMMA,
+    /*26*/ SEMICOLON,
+    /*27*/ ASSIGN,
+    /*28*/ DEF,
+    /*29*/ EOL_T,
+    /*30*/ EOF_T,
 } tokenType;
 
 /**
@@ -68,9 +81,9 @@ typedef enum {
  */
 typedef struct token {
     tokenType type;
-    char* value;
+    string string;
     int intNumber;
-    float floatNumber;
+    double floatNumber;
 } Token;
 
 void getSourceCode(FILE *code);
@@ -79,4 +92,4 @@ int getNextToken();
 
 int isSpaceNext();
 
-void newToken(tokenType type, string s, int c);
+void newToken(tokenType type, string *s, int c);

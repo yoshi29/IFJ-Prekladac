@@ -1,4 +1,7 @@
 //hlavickovy soubor pro praci s nekonecne dlouhymi retezci
+#pragma once
+#include <string.h>
+#include <malloc.h>
 
 typedef struct
 {

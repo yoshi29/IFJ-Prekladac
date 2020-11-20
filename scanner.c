@@ -4,7 +4,7 @@
  */
 #include "scanner.h"
 
-extern Token* token;
+Token *token = NULL;
 FILE *sourceCode;
 char readToken[200];
 int state = START_STATE;
@@ -20,6 +20,7 @@ int getNextToken(){
     }
 
     int c;
+    int c_prev;
     string s;
 
     if (strInit(&s) == 1)
@@ -34,20 +35,25 @@ int getNextToken(){
                 else if (c == '{') token->type = LC_BRACKET;
                 else if (c == '}') token->type = RC_BRACKET;
                 else if (c == ';') token->type = SEMICOLON;
-                //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
-                else if (c == '+') {
-                    token->type = PLUS;
-                    } 
+                else if (c == '+') token->type = PLUS; //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
                 else if (c == '-') token->type = MINUS; //TODO: Nastavit stav, kdy to může být -, anebo záporné číslo; řešit asi podobně jako třeba LE_T_STATE
                 else if (c == '*') token->type = MUL;
                 else if (c == ',') token->type = COMMA;
-                else if (c == '/') state = COMMENT_STATE; 
+                else if (c == '/') state = COMMENT_STATE;
                 else if (c == '<') state = LE_T_STATE;
                 else if (c == '>') state = GE_T_STATE;
                 else if (c == ':') state = DEF_STATE;
+                else if (c == '=') state = EQ_T_STATE;
+                else if (c == '!') state = NE_T_STATE;
+                else if (c == '"') state = STRING_STATE;
                 else if (isspace(c)) {
                     if (c == '\n') token->type = EOL_T;
                     else continue; //Přeskočení mezery
+                }
+                else if (isalpha(c) || c == '_') {
+                    strAddChar(&s, c);
+                    c_prev = c;
+                    state = TEXT_STATE;
                 }
                 else if (isdigit(c)) { 
                     strAddChar(&s, c);
@@ -60,6 +66,9 @@ int getNextToken(){
                     else {
                         state = INT_STATE;
                     }
+                }
+                else { // Chybný znak
+                    return ERR_LEXICAL;
                 }
             break;
 
@@ -124,7 +133,7 @@ int getNextToken(){
                     strAddChar(&s, c);
                 }
                 else { //Konec celého čísla
-                    newToken(INT_T, s, c);
+                    newToken(INT_T, &s, c);
                 }
             break;
 
@@ -134,7 +143,7 @@ int getNextToken(){
                     state = FLOAT_EXPONENT2_STATE;
                 }
                 else {
-                    newToken(FLOAT_T, s, c);
+                    newToken(FLOAT_T, &s, c);
                 }
             break;
 
@@ -147,7 +156,7 @@ int getNextToken(){
                     strAddChar(&s, c);
                 }
                 else {
-                    newToken(FLOAT_T, s, c);
+                    newToken(FLOAT_T, &s, c);
                 }
             break;
 
@@ -161,9 +170,10 @@ int getNextToken(){
                     strAddChar(&s, c);
                 }
                 else {
-                    newToken(FLOAT_T, s, c);
+                    newToken(FLOAT_T, &s, c);
                 }
             break;
+
             case COMMENT_STATE: //k1
                 if(c == '/'){   
                     state = ONE_LINE_C_STATE;
@@ -180,18 +190,107 @@ int getNextToken(){
 
             case ONE_LINE_C_STATE: //k2
                 if (c == '\n') {
+                    token->type = EOL_T;
                     state = START_STATE;
                 }
             break;
 
-            case M_LINE_C_STATE: //k4
-                if (c == '*'){ 
-                    c = getc(sourceCode);
-                    if (c == '/'){
-                        state = START_STATE;
-                    } 
+            // Jsme v blokovém komentáři
+            case M_LINE_C_STATE:
+                if (c == '*') { // k4
+                    state = M_LINE_C_END_STATE;
                 }
             break;
+
+            case M_LINE_C_END_STATE:
+                if (c == '/') {
+                    state = START_STATE;
+                    continue; // Komentář se přeskočí, SUCCESS se nevrátí
+                }
+                else {
+                    state = M_LINE_C_STATE;
+                }
+            break;
+
+            case TEXT_STATE: // f2
+                if (isalpha(c) || isdigit(c) || c == '_') {
+                    c_prev = '\0';
+                    strAddChar(&s, c);
+                }
+                else if (c_prev == '_') {
+                    token->type = UNDERSCORE;
+                    state = START_STATE;
+                    ungetc(c, sourceCode);
+                    strFree(&s);
+                }
+                else {
+                    if (strCmpConstStr(&s, "else") == 0 || strCmpConstStr(&s, "for") == 0 || strCmpConstStr(&s, "func") == 0 ||
+                        strCmpConstStr(&s, "if") == 0 || strCmpConstStr(&s, "package") == 0 || strCmpConstStr(&s, "return") == 0) {
+                        token->type = KEYWORD;
+                        strCopyString(&(token->string), &s);
+                    }
+                    else if (strCmpConstStr(&s, "float64") == 0)    token->type = DATA_TYPE_FLOAT;
+                    else if (strCmpConstStr(&s, "int") == 0)        token->type = DATA_TYPE_INT;
+                    else if (strCmpConstStr(&s, "string") == 0)     token->type = DATA_TYPE_STRING;
+                    else if (strCmpConstStr(&s, "nil") == 0)        token->type = DATA_TYPE_NIL;
+                    else {
+                        token->type = ID;
+                        strCopyString(&(token->string), &s);
+                    }
+                    state = START_STATE;
+                    ungetc(c, sourceCode);
+                    strFree(&s);
+                }
+            break;
+
+            case STRING_STATE:
+                if (c == '"') {
+                    token->type = STRING_T;
+                    strCopyString(&(token->string), &s);
+                    state = START_STATE;
+                    strFree(&s);
+                }
+                else if (c == '\\') {
+                    state = ESCAPE_STATE;
+                }
+                else if (c == '\n') {
+                    return ERR_LEXICAL;
+                }
+                else {
+                    strAddChar(&s, c);
+                }
+            break;
+
+            case ESCAPE_STATE:
+                state = STRING_STATE;
+                switch (c) {
+                case '"': strAddChar(&s, c); break;
+                case '\\': strAddChar(&s, '\\'); break;
+                case 'n': strAddChar(&s, '\n'); break;
+                case 't': strAddChar(&s, '\t'); break;
+                case 'x': state = HEX_ESCAPE_STATE; break;
+                default: return ERR_LEXICAL;
+                }
+            break;
+
+            case HEX_ESCAPE_STATE:
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
+                    state = HEX_ESCAPE_STATE_2;
+                    c_prev = c;
+                }
+                else return ERR_LEXICAL;
+            break;
+
+            case HEX_ESCAPE_STATE_2:
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
+                    char hex[3] = { c_prev, c, '\0' };
+                    char c_new = (char)strtol(hex, NULL, 16);
+                    strAddChar(&s, c_new);
+                    state = STRING_STATE;
+                }
+                else return ERR_LEXICAL;
+            break;
+
         }
 
         if (state == START_STATE) {
@@ -218,18 +317,18 @@ int isSpaceNext() {
     return retVal;
 }
 
-void newToken(tokenType type, string s, int c) { //TODO: Upravit jak bude třeba
+void newToken(tokenType type, string *s, int c) { //TODO: Upravit jak bude třeba
     token->type = type;
     if (type == INT_T) {
-        token->intNumber = atoi(strGetStr(&s));
+        token->intNumber = atoi(strGetStr(s));
     }
     else if (type == FLOAT_T) {
-        token->floatNumber = atof(strGetStr(&s));
+        token->floatNumber = atof(strGetStr(s));
     }
     else {
-        token->value = strGetStr(&s);
+        strCopyString(&(token->string), s);
     }
     state = START_STATE;
     ungetc(c, sourceCode);
-    strFree(&s);
+    strFree(s);
 }
