@@ -6,7 +6,6 @@
 
 Token *token = NULL;
 FILE *sourceCode;
-char readToken[200];
 int state = START_STATE;
 
 void getSourceCode(FILE *code){
@@ -57,14 +56,11 @@ int getNextToken(){
                 }
                 else if (isdigit(c)) { 
                     strAddChar(&s, c);
-                    if ((c = getc(sourceCode)) == '\n') { //Následuje konec řádku => konec čísla
-                        token->type = INT_T;
-                        token->intNumber = atoi(strGetStr(&s));
-                        ungetc(c, sourceCode);
-                        state = START_STATE;
+                    if (c == '0') {
+                        state = ZERO_STATE;
                     }
                     else {
-                        state = INT_STATE;
+                        state = NUMBER_STATE;
                     }
                 }
                 else { // Chybný znak
@@ -117,62 +113,89 @@ int getNextToken(){
                 state = START_STATE;
             break;
 
-            case INT_STATE: //f3
+            case ZERO_STATE:
+                if (c == '.') {
+                    c_prev = c;
+                    strAddChar(&s, c);
+                    state = FLOAT_STATE;
+                }
+                else if (c == 'e' || c == 'E') {
+                    c_prev = c; // TST
+                    strAddChar(&s, c);
+                    state = EXPONENT_STATE;
+                }
+                else newToken(INT_T, &s, c);
+            break;
+
+            case NUMBER_STATE:
                 if (isdigit(c)) {
-                    if (strCmpConstStr(&s, "0") == 0) return ERR_LEXICAL; //Číslo začíná na 0 a nenásleduje ./e/E => chyba
                     strAddChar(&s, c);
                 }
                 else if (c == '.') {
-                    if (isSpaceNext() == 1) return ERR_LEXICAL;
+                    c_prev = c;
+                    strAddChar(&s, c);
                     state = FLOAT_STATE;
+                }
+                else if (c == 'e' || c == 'E') {
+                    c_prev = c; // TST
+                    strAddChar(&s, c);
+                    state = EXPONENT_STATE;
+                }
+                else newToken(INT_T, &s, c);
+            break;
+
+            case FLOAT_STATE:
+                if (isdigit(c)) {
+                    c_prev = c;
                     strAddChar(&s, c);
                 }
                 else if (c == 'e' || c == 'E') {
-                    if (isSpaceNext() == 1) return ERR_LEXICAL; //Nesmí končit na ./e/E
-                    state = FLOAT_EXPONENT_STATE;
-                    strAddChar(&s, c);
-                }
-                else { //Konec celého čísla
-                    newToken(INT_T, &s, c);
-                }
-            break;
-
-            case FLOAT_STATE: //v7
-                if (isdigit(c)) {
-                    strAddChar(&s, c);
-                    state = FLOAT_EXPONENT2_STATE;
+                    if (c_prev == '.') {
+                        return ERR_LEXICAL;
+                    }
+                    else {
+                        c_prev = c;
+                        strAddChar(&s, c);
+                        state = EXPONENT_STATE;
+                    }
                 }
                 else {
+                    if (c_prev == '.')
+                        return ERR_LEXICAL;
                     newToken(FLOAT_T, &s, c);
                 }
             break;
 
-            case FLOAT_EXPONENT_STATE: //v4
-                if (c == '+' || c == '-') { //TODO: Tady buď bude chyba, pokud následující znak bude whitespace, anebo konec tokenu a unget; které?
+            case EXPONENT_STATE:
+                if (c == '+' || c == '-') {
+                    c_prev = c;
                     strAddChar(&s, c);
-                    state = SIGNED_FLOAT_STATE;
+                    state = EXPONENT_SIGN_STATE;
                 }
                 else if (isdigit(c)) {
+                    c_prev = c;
                     strAddChar(&s, c);
                 }
                 else {
+                    if (c_prev == 'e' || c_prev == 'E') {
+                        return ERR_LEXICAL;
+                    }
                     newToken(FLOAT_T, &s, c);
                 }
             break;
 
-            case FLOAT_EXPONENT2_STATE: //f4
-                if (c == 'e' || c == 'E') {
-                    if (isSpaceNext() == 1) return ERR_LEXICAL; //Nesmí končit na ./e/E
-                    state = FLOAT_EXPONENT_STATE;
-                    strAddChar(&s, c);
-                }
+            case EXPONENT_SIGN_STATE:
                 if (isdigit(c)) {
+                    c_prev = c;
                     strAddChar(&s, c);
                 }
                 else {
+                    if (c_prev == '+' || c_prev == '-') {
+                        return ERR_LEXICAL;
+                    }
                     newToken(FLOAT_T, &s, c);
                 }
-            break;
+                break;
 
             case COMMENT_STATE: //k1
                 if(c == '/'){   
@@ -306,6 +329,7 @@ int getNextToken(){
     else return ERR_LEXICAL;
 }
 
+// Asi nebude potřeba
 int isSpaceNext() {
     int c = getc(sourceCode);
     int retVal;
@@ -320,7 +344,7 @@ int isSpaceNext() {
 void newToken(tokenType type, string *s, int c) { //TODO: Upravit jak bude třeba
     token->type = type;
     if (type == INT_T) {
-        token->intNumber = atoi(strGetStr(s));
+        token->intNumber = strtoll(strGetStr(s), NULL, 10);
     }
     else if (type == FLOAT_T) {
         token->floatNumber = atof(strGetStr(s));

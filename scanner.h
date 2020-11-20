@@ -8,12 +8,12 @@
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
+#include "ctype.h"
+#include "stdint.h"
 
 #include "error.h"
 #include "scanner.h"
 #include "str.h"
-#include "ctype.h"
-#include "stdint.h"
 
 extern struct token *token;
 
@@ -28,11 +28,11 @@ typedef enum {
     ONE_LINE_C_STATE,
     M_LINE_C_STATE,
     M_LINE_C_END_STATE,
-    INT_STATE,
+    NUMBER_STATE,
+    ZERO_STATE,
     FLOAT_STATE,
-    SIGNED_FLOAT_STATE,
-    FLOAT_EXPONENT_STATE,
-    FLOAT_EXPONENT2_STATE,
+    EXPONENT_STATE,
+    EXPONENT_SIGN_STATE,
     TEXT_STATE,
     STRING_STATE,
     ESCAPE_STATE,
@@ -44,7 +44,7 @@ typedef enum {
  * Typ tokenu
  */
 typedef enum {
-	/*0*/ STRING_T,
+    /*0*/ STRING_T,
     /*1*/ FLOAT_T,
     /*2*/ INT_T,
     /*3*/ KEYWORD,
