@@ -6,7 +6,6 @@
 #include "parser.h"
 
 TTree* symTable;
-Token* token;
 Token* lastToken;
 
 // ------------- TODO: Smazat až bude get_next_token ze scanneru
@@ -49,7 +48,9 @@ int parse(FILE* file) {
     //PopFrame(&stack);
 
     token = malloc(sizeof(Token));
+    strInit(&(token->string));
     lastToken = malloc(sizeof(Token));
+    strInit(&(lastToken->string));
 
     //insert_built_in_funcs(&(symTable->root));
     getSourceCode(file);
@@ -168,7 +169,7 @@ int def_func() { //TODO: ALMOST DONE
 
     if (strCmpConstStr(&(token->string), "func") == 0 && test_get_next()->type == ID) {
         lastToken->type = token->type; // Uloží minulý token, který může být názvem funkce
-        lastToken->string = token->string;
+        strCopyString(&(lastToken->string), &(token->string));
 
         if (test_get_next()->type == L_BRACKET) { 
             test_get_next();
@@ -180,7 +181,7 @@ int def_func() { //TODO: ALMOST DONE
             if (retVal != SUCCESS) return ERR_SYNTAX;
 
             if (token->type == R_BRACKET) {
-                TSInsert(&(symTable->root), strGetStr(&lastToken->string), FUNC, true, paramCount, localTS); //vložení informací o funkci do tabulky symbolů
+                TSInsert(&(symTable->root), strGetStr(&(lastToken->string)), FUNC, true, paramCount, localTS); //vložení informací o funkci do tabulky symbolů
                 test_get_next();
                 retVal = func_ret_types();
                 if (retVal != SUCCESS) return ERR_SYNTAX;
@@ -210,10 +211,13 @@ int formal_params(int *paramCount, TNode** localTS) { //DONE ^^
     int retVal = SUCCESS;
 
     if (token->type == ID) {
-        char* paramName = strGetStr(&(token->string));
+        string paramName;
+        strInit(&paramName);
+        strCopyString(&paramName, &(token->string));
+
         test_get_next();
         if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
-            TSInsert(localTS, paramName, token->type, true, *paramCount, NULL);
+            TSInsert(localTS, paramName.str, token->type, true, *paramCount, NULL);
             (*paramCount)++;
 
             test_get_next(); //Načte další token
@@ -222,6 +226,7 @@ int formal_params(int *paramCount, TNode** localTS) { //DONE ^^
             retVal = formal_params_opt(paramCount, localTS);
         }
         else retVal = ERR_SYNTAX;
+        strFree(&paramName);
     }
 
     printf("FORMAL_PARAMS: %i\n", retVal);
@@ -236,17 +241,21 @@ int formal_params_opt(int *paramCount, TNode** localTS) { //DONE ^^
         if (test_get_next()->type == ID) {
             printf("3.");
             TSPrint(*localTS);
-            char* paramName = strGetStr(&(token->string));
+            string paramName;
+            strInit(&paramName);
+            strCopyString(&paramName, &(token->string));
             test_get_next();
 
             if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
-                TSInsertAndExitOnDuplicity(localTS, paramName, token->type, true, *paramCount, NULL);
+                TSInsertAndExitOnDuplicity(localTS, paramName.str, token->type, true, *paramCount, NULL);
                 (*paramCount)++;
 
                 test_get_next(); //Načte další token
                 retVal = formal_params_opt(paramCount, localTS);
             }
             else retVal = ERR_SYNTAX;
+
+            strFree(&paramName);
         }
         else retVal = ERR_SYNTAX;
     }
