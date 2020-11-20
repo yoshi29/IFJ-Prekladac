@@ -22,7 +22,8 @@ PSA_Stack_Elem *elem_create(PSA_Data_Type type, Token *token)
         }
 
         new_token->type = token->type;
-        new_token->value = token->value;
+        strInit(&(new_token->string));
+        strCopyString(&(new_token->string), &(token->string));
     }
 
 
@@ -50,7 +51,10 @@ void elem_destroy(PSA_Stack_Elem *elem)
     if (elem != NULL)
     {
         if (elem->token != NULL)
+        {
+            strFree(&(elem->token->string));
             free(elem->token);
+        }
 
         free(elem);
     }

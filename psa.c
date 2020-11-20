@@ -99,8 +99,8 @@ int psa()
             
             while (current_top != reduce_start)
             {
-                stack_pop(&stack);
                 current_top = current_top->nextPtr;
+                stack_pop(&stack);
             }
             stack_pop(&stack);
             stack_push(&stack, elem_create(type_nonterminal, NULL));
