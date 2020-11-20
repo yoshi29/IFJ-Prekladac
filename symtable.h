@@ -1,6 +1,7 @@
 /**
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Jana Stopková, xstopk01
+ *        Filip Vágner, xvagne08
  */
 
 #pragma once
@@ -41,9 +42,13 @@ typedef struct tTree {
     struct tNode* last;
 } TTree;
 
+typedef struct tStack_elem {
+    struct tNode* node;
+    struct tStack_elem* next;
+} TStack_Elem;
+
 typedef struct tStack {
-    struct tNode *node;
-    struct tStack* next;
+    struct tStack_elem* top;
 } TStack;
 
 /**
@@ -86,6 +91,10 @@ void TSDispose(TNode* root);
  */
 void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
 
-void PushFrame(TStack* stackItem);
+void TStackInit(TStack* stack);
 
-void PopFrame(TStack* stackItem);
+void PushFrame(TStack* stack);
+
+void PopFrame(TStack* stack);
+
+void TSPrint(TNode* root);

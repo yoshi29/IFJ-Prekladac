@@ -13,6 +13,7 @@
 #include "scanner.h"
 #include "str.h"
 #include "ctype.h"
+#include "stdint.h"
 
 extern struct token *token;
 
@@ -82,7 +83,7 @@ typedef enum {
 typedef struct token {
     tokenType type;
     string string;
-    int intNumber;
+    int64_t intNumber;
     double floatNumber;
 } Token;
 

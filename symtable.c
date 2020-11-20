@@ -1,6 +1,7 @@
 /**
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Jana Stopková, xstopk01
+ *        Filip Vágner, xvagne08
  */
 
 #include "symtable.h"
@@ -59,6 +60,14 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
+void TSPrint(TNode* root) {
+    if (root != NULL) {
+        printf("KEY: %s\n", root->key);
+        TSPrint(root->lptr);
+        TSPrint(root->rptr);
+    }
+}
+
 void TSDispose(TNode* root) {
     if (root != NULL) {
         TSDispose(root->lptr);
@@ -82,18 +91,27 @@ void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isD
     else TSInsert(root, key, type, isDefined, param, localTS);
 }
 
+void TStackInit(TStack* stack) {
+    stack->top = NULL;
+}
+
 void PushFrame(TStack* stack) {
-    TStack *newStackTop = malloc(sizeof(struct tStack));
+    TStack_Elem* newStackTop = malloc(sizeof(struct tStack_elem));
     if (newStackTop == NULL) {
         print_err(ERR_COMPILER);
         exit(ERR_COMPILER);
     }
 
-    newStackTop->next = stack;
+    newStackTop->next = stack->top;
     newStackTop->node = NULL;
-    *stack = *newStackTop;
+    stack->top = newStackTop;
 }
 
 void PopFrame(TStack* stack) {
-
+    TStack_Elem* remove = stack->top;
+    stack->top = stack->top->next;
+    if (remove->node != NULL)
+        TSDispose(remove->node);
+    free(remove);
+    remove = NULL;
 }
