@@ -19,6 +19,10 @@
  */
 int parse(FILE* file);
 
+Token* getToken();
+
+Token* getNonEolToken();
+
 /**
  * Vloží do tabulky symbolů vestavěné funkce
  */
@@ -28,8 +32,6 @@ void insert_built_in_funcs(TNode** root);
  * Pravidlo <program> → package main EOL <def_func_o> EOF
  */
 int program();
-
-nodeType getNodeType(char* dataType);
 
 /**
  * Nepovinná definice funkce

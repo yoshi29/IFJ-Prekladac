@@ -6,7 +6,7 @@
 #include "psa.h"
 
 extern Token* token;
-extern Token* test_get_next();
+extern Token* getToken();
 
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
@@ -44,9 +44,10 @@ int psa()
     
     retVal = SUCCESS;
 
+    printf("----- TYPE: %i\n", token->type);
+
     while (current_elem->type != type_dollar || !is_delimiter(token))
     {
-        //printf("TOKEN_VALUE: %s\n", token->value);
         int table_result = table_value(current_elem, token);
 
         if (table_result == X)
@@ -72,7 +73,7 @@ int psa()
 
             elem_set_reduce(new_elem, 1);   // Nastaví prvek jako začátek redukce
                 
-            token = test_get_next();
+            token = getToken();
         }
         else if (table_result == R) // > (reduce)
         {
@@ -117,7 +118,7 @@ int psa()
             }
 
             stack_push(&stack, new_elem);
-            token = test_get_next();
+            token = getToken();
         }
         else // Na vstupu byl nesprávný token
         {
