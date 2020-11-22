@@ -14,22 +14,23 @@ void getSourceCode(FILE *code){
 
 int getNextToken(){
 
-    if (sourceCode == NULL){
+    if (sourceCode == NULL)
         return ERR_COMPILER;
-    }
 
     int c;
     int c_prev;
     string s;
 
     if (strInit(&s) == 1)
-        return ERR_COMPILER; //TODO: Je to správná chyba?
+        return ERR_COMPILER;
 
-    while((c = getc(sourceCode)) != EOF) {
+    while(1) {
+        c = getc(sourceCode);
         switch (state)
         {
             case START_STATE:
-                if (c == '(') token->type = L_BRACKET;
+                if (c == EOF) token->type = EOF_T;
+                else if (c == '(') token->type = L_BRACKET;
                 else if (c == ')') token->type = R_BRACKET;
                 else if (c == '{') token->type = LC_BRACKET;
                 else if (c == '}') token->type = RC_BRACKET;
@@ -64,6 +65,7 @@ int getNextToken(){
                     }
                 }
                 else { // Chybný znak
+                    strFree(&s);
                     return ERR_LEXICAL;
                 }
             break;
@@ -98,7 +100,7 @@ int getNextToken(){
             case NE_T_STATE: //v2 nebo v21
                 if (c == '=') token->type = NE_T;
                 else {
-                    ungetc(c, sourceCode);
+                    strFree(&s);
                     return ERR_LEXICAL;
                 }
                 state = START_STATE;
@@ -107,7 +109,7 @@ int getNextToken(){
             case DEF_STATE: //v1 nebo f15
                 if (c == '=') token->type = DEF;
                 else {
-                    ungetc(c, sourceCode);
+                    strFree(&s);
                     return ERR_LEXICAL;
                 }
                 state = START_STATE;
@@ -120,7 +122,7 @@ int getNextToken(){
                     state = FLOAT_STATE;
                 }
                 else if (c == 'e' || c == 'E') {
-                    c_prev = c; // TST
+                    c_prev = c;
                     strAddChar(&s, c);
                     state = EXPONENT_STATE;
                 }
@@ -137,7 +139,7 @@ int getNextToken(){
                     state = FLOAT_STATE;
                 }
                 else if (c == 'e' || c == 'E') {
-                    c_prev = c; // TST
+                    c_prev = c;
                     strAddChar(&s, c);
                     state = EXPONENT_STATE;
                 }
@@ -151,6 +153,7 @@ int getNextToken(){
                 }
                 else if (c == 'e' || c == 'E') {
                     if (c_prev == '.') {
+                        strFree(&s);
                         return ERR_LEXICAL;
                     }
                     else {
@@ -160,8 +163,10 @@ int getNextToken(){
                     }
                 }
                 else {
-                    if (c_prev == '.')
+                    if (c_prev == '.') {
+                        strFree(&s);
                         return ERR_LEXICAL;
+                    }
                     newToken(FLOAT_T, &s, c);
                 }
             break;
@@ -178,6 +183,7 @@ int getNextToken(){
                 }
                 else {
                     if (c_prev == 'e' || c_prev == 'E') {
+                        strFree(&s);
                         return ERR_LEXICAL;
                     }
                     newToken(FLOAT_T, &s, c);
@@ -191,11 +197,12 @@ int getNextToken(){
                 }
                 else {
                     if (c_prev == '+' || c_prev == '-') {
+                        strFree(&s);
                         return ERR_LEXICAL;
                     }
                     newToken(FLOAT_T, &s, c);
                 }
-                break;
+            break;
 
             case COMMENT_STATE: //k1
                 if(c == '/'){   
@@ -216,6 +223,10 @@ int getNextToken(){
                     token->type = EOL_T;
                     state = START_STATE;
                 }
+                else if (c == EOF) {
+                    token->type = EOF_T;
+                    state = START_STATE;
+                }
             break;
 
             // Jsme v blokovém komentáři
@@ -223,12 +234,20 @@ int getNextToken(){
                 if (c == '*') { // k4
                     state = M_LINE_C_END_STATE;
                 }
+                else if (c == EOF) {
+                    token->type = EOF_T;
+                    state = START_STATE;
+                }
             break;
 
             case M_LINE_C_END_STATE:
                 if (c == '/') {
                     state = START_STATE;
                     continue; // Komentář se přeskočí, SUCCESS se nevrátí
+                }
+                else if (c == EOF) {
+                    token->type = EOF_T;
+                    state = START_STATE;
                 }
                 else {
                     state = M_LINE_C_STATE;
@@ -276,7 +295,8 @@ int getNextToken(){
                 else if (c == '\\') {
                     state = ESCAPE_STATE;
                 }
-                else if (c == '\n') {
+                else if (c == '\n' || c == EOF) {
+                    strFree(&s);
                     return ERR_LEXICAL;
                 }
                 else {
@@ -287,12 +307,14 @@ int getNextToken(){
             case ESCAPE_STATE:
                 state = STRING_STATE;
                 switch (c) {
-                case '"': strAddChar(&s, c); break;
-                case '\\': strAddChar(&s, '\\'); break;
-                case 'n': strAddChar(&s, '\n'); break;
-                case 't': strAddChar(&s, '\t'); break;
-                case 'x': state = HEX_ESCAPE_STATE; break;
-                default: return ERR_LEXICAL;
+                    case '"': strAddChar(&s, c); break;
+                    case '\\': strAddChar(&s, '\\'); break;
+                    case 'n': strAddChar(&s, '\n'); break;
+                    case 't': strAddChar(&s, '\t'); break;
+                    case 'x': state = HEX_ESCAPE_STATE; break;
+                    default:
+                        strFree(&s);
+                        return ERR_LEXICAL;
                 }
             break;
 
@@ -301,7 +323,10 @@ int getNextToken(){
                     state = HEX_ESCAPE_STATE_2;
                     c_prev = c;
                 }
-                else return ERR_LEXICAL;
+                else {
+                    strFree(&s);
+                    return ERR_LEXICAL;
+                }
             break;
 
             case HEX_ESCAPE_STATE_2:
@@ -311,22 +336,17 @@ int getNextToken(){
                     strAddChar(&s, c_new);
                     state = STRING_STATE;
                 }
-                else return ERR_LEXICAL;
+                else {
+                    strFree(&s);
+                    return ERR_LEXICAL;
+                }
             break;
-
         }
 
         if (state == START_STATE) {
             return SUCCESS;
         }
     }
-
-    if (c == EOF) {
-        strFree(&s);
-        token->type = EOF_T;
-        return SUCCESS;
-    }
-    else return ERR_LEXICAL;
 }
 
 // Asi nebude potřeba

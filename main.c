@@ -25,6 +25,10 @@ int main() {
         printf("%s", str_token[token->type]);
         if (token->type == STRING_T || token->type == KEYWORD || token->type == ID)
             printf(" [%s]", token->string.str);
+        else if (token->type == INT_T)
+            printf(" [%ld]", token->intNumber);
+        else if (token->type == FLOAT_T)
+            printf(" [%g]", token->floatNumber);
         printf("\n");
         retval = getNextToken();
     }
