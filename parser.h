@@ -111,7 +111,12 @@ int return_val();
  * Pravidlo <ids_o> → ε 
  * Pravidlo <ids_o> → , id <ids_o>
  */
-int ids_opt();
+int params_opt();
+
+/*
+ * Nepovinné další identifikátory, nebo výrazy
+ */
+int ids_exprs_opt();
 
 /**
  * If

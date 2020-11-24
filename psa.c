@@ -44,8 +44,6 @@ int psa()
     
     retVal = SUCCESS;
 
-    printf("----- TYPE: %i\n", token->type);
-
     while (current_elem->type != type_dollar || !is_delimiter(token))
     {
         int table_result = table_value(current_elem, token);

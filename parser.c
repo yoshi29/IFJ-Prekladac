@@ -344,19 +344,23 @@ int return_val() {
 
     if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
-    retVal = ids_opt();
+    retVal = ids_exprs_opt();
     if (retVal == -1) retVal = SUCCESS;
     return retVal;
 }
 
-int ids_opt() { //TODO: Možná se ještě podívat na opt EOL
+int params_opt() { //TODO: Možná se ještě podívat na opt EOL ////////////////////////////////////////
     int retVal = SUCCESS;
     
     if (token->type == COMMA) {
         getToken();
-        retVal = psa();
-        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
-        retVal = ids_opt();
+        if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
+            getToken();
+            /*retVal = psa();
+
+            if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;*/
+            retVal = params_opt();
+        }
     }
 
     printf("IDS_OPT: %i\n", retVal);
@@ -479,6 +483,7 @@ int func() { //DONE ^^
         getNonEolToken(); //za závorkou možný EOL
         retVal = params();
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
+        getNextToken();
     }
 
     printf("FUNC: %i\n", retVal);
@@ -486,25 +491,34 @@ int func() { //DONE ^^
 }
 
 int params() {
-    int retVal = psa();
-    if (retVal == -1) return SUCCESS;
-    if (retVal == ERR_SYNTAX) return ERR_SYNTAX;
-
-    retVal = ids_opt(); //TODO: Bude použítí ok?
-    if (retVal == -1) retVal = SUCCESS;
+    int retVal = SUCCESS;
+    
+    if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
+        getToken();
+        retVal = params_opt();
+    }
 
     return retVal;
 }
 
-int assign_r() {
-    printf("----- TYPE: %i, retVal: %i\n", token->type, 0);
+int assign_r() { 
     int retVal = psa();
-    printf("----- TYPE: %i, retVal: %i\n", token->type, retVal);
+    if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+    retVal = ids_exprs_opt();
+    return retVal;
+}
 
-    //if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+int ids_exprs_opt() {
+    int retVal = SUCCESS;
 
-    //retVal = ids_opt(); //TODO: Bude v pořádku zde použít ids_opt();
+    if (token->type == COMMA) {
+        getToken();
+        retVal = psa();
+        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+        retVal = ids_exprs_opt();
+    }
 
+    printf("IDS_EXPR_OPT: %i\n", retVal);
     return retVal;
 }
 
