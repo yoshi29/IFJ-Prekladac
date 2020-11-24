@@ -19,14 +19,26 @@
  */
 int parse(FILE* file);
 
+/**
+ * Pokud funkce getNextToken() ze scanneru vrací SUCCESS, pak vrací token, jinak exit
+ * @return Další token
+ */
 Token* getToken();
 
+/**
+ * @return Další token, který není EOL_T
+ */
 Token* getNonEolToken();
 
 /**
  * Vloží do tabulky symbolů vestavěné funkce
  */
-void insert_built_in_funcs(TNode** root);
+void insert_built_in_funcs();
+
+/**
+ * Kontroluje, zda byly všechny použité funkce definované a zda byla definována funkce main. Pokud kontrola neprojde - exit
+ */
+void checkFunctionDefinition();
 
 /**
  * Pravidlo <program> → package main EOL <def_func_o> EOF
@@ -50,8 +62,9 @@ int def_func();
  * Nepovinné formální parametry funkce
  * Pravidlo <f_params> → id <type> <f_params_o>
  * Pravidlo <f_params> → ε
+ * @param isMain 1 pokud se jedná o funkci main, 0 jinak
  */
-int formal_params(int* paramCount, TNode** localTS);
+int formal_params(int* paramCount, TNode** localTS, int isMain);
 
 /**
  * Nepovinné formální parametry funkce
@@ -64,14 +77,15 @@ int formal_params_opt(int* paramCount, TNode** localTS);
  * Nepovinné návratové typy funkce
  * Pravidlo <f_types> → ( <types> )
  * Pravidlo <f_types> → ε
+ * @param isMain 1 pokud se jedná o funkci main, 0 jinak
  */
-int func_ret_types();
+int func_ret_types(int isMain);
 
 /**
  * Datový typ, případně další oddělené čárkou
  * Pravidlo <types> → <type> <types_o>
  */
-int types();
+int types(int isMain);
 
 /**
  * Nepovinné další datové typy
@@ -108,8 +122,8 @@ int return_val();
 
 /**
  * Nepovinné další identifikátory
- * Pravidlo <ids_o> → ε 
- * Pravidlo <ids_o> → , id <ids_o>
+ * Pravidlo <params_o> → ε 
+ * Pravidlo <params_o> → , id <params_o>
  */
 int params_opt();
 
@@ -156,7 +170,7 @@ int def_var();
  * Pravidlo <after_id> → <def_var>
  * Pravidlo <after_id> → <ids_lo>
  */
-int after_id();
+int after_id(char* idName);
 
 /**
  * Nepovinné další identifikátory na levé straně přiřazení
@@ -181,7 +195,7 @@ int func();
 /**
  * Parametry funkce
  * Pravidlo <params> → ε
- * Pravidlo <params> → id <ids_lo>
+ * Pravidlo <params> → id <params_o>
  */
 int params();
 

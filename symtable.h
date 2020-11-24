@@ -11,6 +11,7 @@
 #include "string.h"
 
 #include "error.h"
+#include "str.h"
 
 /*
  * Typ identifikátoru
@@ -76,9 +77,26 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
 TNode* TSSearch(TNode* root, char* key);
 
 /**
+ * Projde tabulku symbolů a kontroluje, zda splňuje podmínky
+ * @param root Ukazatel na kořen stromu
+ * @param type Typ, který mají všechny prvky tabulky symbolů mít
+ * @param isDefined 
+ * @return 1 pokud se všechny hodnoty v tabulce symbolů platí, že node.type == type && node.isDefined = isDefined, 0 jinak
+ */
+int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined);
+
+/**
  * Zruší celý strom
  */
 void TSDispose(TNode* root);
+
+/**
+ * Hledá klíč v rámci celého zásobníku
+ * @param stackElem Prvek zásobníku
+ * @param key Hledaný klíč
+ * @return 1 v případě nalezení klíče, 0 jinak
+ */
+int TSSearchStack(TStack_Elem* stackElem, char* key);
 
 /**
  * Vloží prvek do tabulky symbolů pouze pokud se v tabulce symbolů doposud nenachází
@@ -89,7 +107,9 @@ void TSDispose(TNode* root);
  * @param param Počet parametrů (jde-li o funkci), Pozice parametru (jde-li o parametr funkce)
  * @param localTS Ukazatel na tabulku symbolů lokální úrovně (jde-li o funkci)
  */
-void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
+void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
+
+void TSExitIfNotDefined(TStack_Elem* stackElem, char* key);
 
 void TStackInit(TStack* stack);
 

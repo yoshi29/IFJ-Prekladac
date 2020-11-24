@@ -19,7 +19,8 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
             exit(ERR_COMPILER);
         }
 
-        tmp->key = key;
+        tmp->key = malloc(strlen(key) + 1);
+        strcpy(tmp->key, key);
         tmp->type = type;
         tmp->isDefined = isDefined;
         tmp->localTS = localTS;
@@ -60,9 +61,21 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
+int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined) {
+    if (root != NULL) {
+        if (root->type == type) {
+            if (root->isDefined == isDefined)
+                return (TSAllMeetsConditions(root->rptr, type, isDefined) && TSAllMeetsConditions(root->lptr, type, isDefined)) ;
+            else return 0;
+        }
+        else return 1; //Pokud by nebyla nalezena žádná funkce, pak hodnota 1 je správným výsledkem
+    }
+    else return 1; //Pokud by nebylo nalezeno nic, pak hodnota 1 je správným výsledkem
+}
+
 void TSPrint(TNode* root) {
     if (root != NULL) {
-        printf("KEY: %s\n", root->key);
+        printf("--- Printing: %s\n", root->key);
         TSPrint(root->lptr);
         TSPrint(root->rptr);
     }
@@ -78,17 +91,33 @@ void TSDispose(TNode* root) {
             root->localTS = NULL;
         }
 
+        free(root->key);
         free(root);
         root = NULL;
     }
 }
 
-void TSInsertAndExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
+int TSSearchStack(TStack_Elem* stackElem, char* key) {
+    if (stackElem != NULL) {
+        if (TSSearch(stackElem->node, key) != NULL) return 1;
+        else return TSSearchStack(stackElem->next, key);
+    }
+    else return 0; //TODO: OK řešení?
+}
+
+void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice
         print_err(ERR_SEM_DEF);
         exit(ERR_SEM_DEF); //TODO: Hned exit, anebo vracet hodnotu a všude to kontrolovat?
     }
     else TSInsert(root, key, type, isDefined, param, localTS);
+}
+
+void TSExitIfNotDefined(TStack_Elem* stackElem, char* key) {
+    if (TSSearchStack(stackElem, key) == 0) {
+        print_err(ERR_SEM_DEF);
+        exit(ERR_SEM_DEF);
+    }
 }
 
 void TStackInit(TStack* stack) {
