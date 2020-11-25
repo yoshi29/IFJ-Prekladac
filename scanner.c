@@ -263,7 +263,6 @@ int getNextToken(){
                     token->type = UNDERSCORE;
                     state = START_STATE;
                     ungetc(c, sourceCode);
-                    strFree(&s);
                 }
                 else {
                     if (strCmpConstStr(&s, "else") == 0 || strCmpConstStr(&s, "for") == 0 || strCmpConstStr(&s, "func") == 0 ||
@@ -281,7 +280,6 @@ int getNextToken(){
                     }
                     state = START_STATE;
                     ungetc(c, sourceCode);
-                    strFree(&s);
                 }
             break;
 
@@ -290,7 +288,6 @@ int getNextToken(){
                     token->type = STRING_T;
                     strCopyString(&(token->string), &s);
                     state = START_STATE;
-                    strFree(&s);
                 }
                 else if (c == '\\') {
                     state = ESCAPE_STATE;
@@ -344,21 +341,10 @@ int getNextToken(){
         }
 
         if (state == START_STATE) {
+            strFree(&s);
             return SUCCESS;
         }
     }
-}
-
-// Asi nebude potřeba
-int isSpaceNext() {
-    int c = getc(sourceCode);
-    int retVal;
-    if (isspace(c) == 0) { //Není whitespace
-        retVal = 0;
-    }
-    else retVal = 1;
-    ungetc(c, sourceCode);
-    return retVal;
 }
 
 void newToken(tokenType type, string *s, int c) { //TODO: Upravit jak bude třeba
@@ -374,5 +360,4 @@ void newToken(tokenType type, string *s, int c) { //TODO: Upravit jak bude třeb
     }
     state = START_STATE;
     ungetc(c, sourceCode);
-    strFree(s);
 }

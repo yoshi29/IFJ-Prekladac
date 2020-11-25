@@ -91,6 +91,4 @@ void getSourceCode(FILE *code);
 
 int getNextToken();
 
-int isSpaceNext();
-
 void newToken(tokenType type, string *s, int c);
