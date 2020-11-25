@@ -5,9 +5,6 @@
 
 #include "psa.h"
 
-extern Token* token;
-extern Token* getToken();
-
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -20,31 +17,25 @@ static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
         { S , S , S , S , X , S , X }   // $
 };
 
-int psa()
+int psa(int *data_type)
 {
-    int retVal;
+    int retVal = SUCCESS;
 
     // Inicializace zásobníku
     PSA_Stack stack;
     stack_init(&stack);
 
     // Do zásobníku se vloží $ pro označení dna zásobníku
-    PSA_Stack_Elem *current_elem = elem_create(type_dollar, NULL);
+    PSA_Stack_Elem *current_elem = elem_create(type_dollar, -1, -1, NULL, 0, 0);
     stack_push(&stack, current_elem);
-    
-    int check_function = 0;
 
     if (is_delimiter(token)) // Výraz je prázdný
     {
         stack_pop(&stack);
         return -1;
     }
-    else if (token->type == ID) // Na vstupu je ID, mohlo by se jednat o funkci
-        check_function = 1;
     
-    retVal = SUCCESS;
-
-    while (current_elem->type != type_dollar || !is_delimiter(token))
+    while (current_elem->elem_type != type_dollar || !is_delimiter(token))
     {
         int table_result = table_value(current_elem, token);
 
@@ -55,7 +46,7 @@ int psa()
         }
         else if (table_result == S) // < (shift)
         {
-            PSA_Stack_Elem *new_elem = elem_create(type_token, token);
+            PSA_Stack_Elem *new_elem = elem_create_from_token(type_term, token);
 
             if (new_elem == NULL)
             {
@@ -71,7 +62,7 @@ int psa()
 
             elem_set_reduce(new_elem, 1);   // Nastaví prvek jako začátek redukce
                 
-            token = getToken();
+            getNextToken();
         }
         else if (table_result == R) // > (reduce)
         {
@@ -86,28 +77,25 @@ int psa()
             PSA_Stack_Elem *current_top = stack_top(&stack);
 
             // Pokusí se najít pravidlo pro redukci
-            int rule = check_rule(reduce_start, current_top);
-
+            int rule = find_rule(reduce_start, current_top);
             if (rule == -1)
             {
+                // CHYBA
                 retVal = ERR_SYNTAX;
                 break;
-            }
+            }   
 
-            // TODO: Nahradit pravou stranu neterminálem, sémantická kontrola
-            
-            while (current_top != reduce_start)
+            int ret = reduce(&stack, rule);
+            if (ret != SUCCESS)
             {
-                current_top = current_top->nextPtr;
-                stack_pop(&stack);
+                retVal = ret;
+                break;
             }
-            stack_pop(&stack);
-            stack_push(&stack, elem_create(type_nonterminal, NULL));
 
         }
         else if (table_result == E) // = (equal)
         {
-            PSA_Stack_Elem *new_elem = elem_create(type_token, token);
+            PSA_Stack_Elem *new_elem = elem_create_from_token(type_term, token);
 
             if (new_elem == NULL)
             {
@@ -116,7 +104,7 @@ int psa()
             }
 
             stack_push(&stack, new_elem);
-            token = getToken();
+            getNextToken();
         }
         else // Na vstupu byl nesprávný token
         {
@@ -124,23 +112,138 @@ int psa()
             break;
         }
 
-        if (check_function && token->type == L_BRACKET) // Jedná se o funkci
-        {
-            check_function = 0;
-            // TODO: předání, sémantika
-            retVal = func();
-            break;
-        }
-
         current_elem = stack_top_term(&stack);
     }
 
-    stack_free(&stack);
+    if (retVal == SUCCESS)
+        *data_type = stack_top(&stack)->node_type;
 
+    stack_free(&stack);
     return retVal;
 }
 
-int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
+// Zatím pouze kontroluje sémantiku
+// Možná bude lepší sloučit s find_rule()
+// TODO: Generování kódu/stromu
+int reduce(PSA_Stack *s, int rule)
+{
+    PSA_Stack_Elem *current = stack_top(s);
+    TStack_Elem *sym_table = stack.top;
+
+    switch (rule)
+    {
+    case R_E_PLUS_E: // E -> E + E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_MINUS_E: // E -> E - E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        if (current->node_type == STRING)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_MUL_E: // E -> E * E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        if (current->node_type == STRING)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_DIV_E: // E -> E / E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        if (current->node_type == STRING)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_EQ_E: // E -> E == E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_NE_E: // E -> E != E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_GT_E: // E -> E > E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_LT_E: // E -> E < E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_GE_E: // E -> E >= E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_E_LE_E: // E -> E <= E
+        if (current->node_type != current->nextPtr->nextPtr->node_type)
+            return ERR_SEM_COMP;
+        stack_pop_n(s, 2);
+        elem_set_reduce(stack_top(s), 0);
+        return SUCCESS;
+
+    case R_LBR_E_RBR: // E -> ( E )
+        stack_pop(s);
+        PSA_Stack_Elem *new_elem = elem_create(current->elem_type, current->token_type, current->node_type, &(current->string), current->intNumber, current->floatNumber);
+        if (new_elem == NULL) return ERR_COMPILER;
+        stack_pop_n(s, 2);
+        stack_push(s, new_elem);
+        return SUCCESS;
+
+    case R_I: // E -> i
+        current->elem_type = type_nonterm;
+        elem_set_reduce(current, 0);
+
+        if (current->token_type == ID)
+        {
+            TNode *node = TSSearchStackAndReturn(sym_table, current->string.str);
+            if (node == NULL || node->type == FUNC)
+                return ERR_SEM_DEF;
+            if (node->isDefined == false)
+                return ERR_SEM_DEF;
+
+            current->node_type = node->type;
+        }
+        else if (current->token_type == INT_T) current->node_type = INT;
+        else if (current->token_type == FLOAT_T) current->node_type = FLOAT;
+        else if (current->token_type == STRING_T) current->node_type = STRING;
+        //else if (current->token_type == DATA_TYPE_NIL) current->node_type = NIL;
+        else return ERR_COMPILER;
+
+        return SUCCESS;
+
+    default:
+        return ERR_COMPILER;
+    }
+}
+
+int find_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
 {
     int exit = 0;
     int state = 0;
@@ -151,13 +254,13 @@ int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
         switch (state)
         {
         case 0:
-            if (end->type == type_nonterminal)
+            if (end->elem_type == type_nonterm)
                 state = 1;
-            else if (end->type == type_token && end->token->type == R_BRACKET)
+            else if (end->elem_type == type_term && end->token_type == R_BRACKET)
                 state = 2;
-            else if (end->type == type_token && end == start)   
+            else if (end->elem_type == type_term && end == start)
             {
-                switch (end->token->type)
+                switch (end->token_type)
                 {
                 case STRING_T: case FLOAT_T: case INT_T: case ID:   // E -> i
                     exit = 1;
@@ -170,12 +273,12 @@ int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
                 exit = 1;
             break;
         case 1:
-            if (end->type != type_token)
+            if (end->elem_type != type_term)
             {
                 exit = 1;
                 break;
             }
-            switch (end->token->type)
+            switch (end->token_type)
             {
             case PLUS: state = 10; break;
             case MINUS: state = 11; break;
@@ -192,71 +295,70 @@ int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
             break;
         case 10:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E + E
+            if (end->elem_type == type_nonterm && end == start) // E -> E + E
                 result = R_E_PLUS_E;
             break;
         case 11:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E - E
+            if (end->elem_type == type_nonterm && end == start) // E -> E - E
                 result = R_E_MINUS_E;
             break;
         case 12:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E * E
+            if (end->elem_type == type_nonterm && end == start) // E -> E * E
                 result = R_E_MUL_E;
             break;
         case 13:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E / E
+            if (end->elem_type == type_nonterm && end == start) // E -> E / E
                 result = R_E_DIV_E;
             break;
         case 14:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E == E
+            if (end->elem_type == type_nonterm && end == start) // E -> E == E
                 result = R_E_EQ_E;
             break;
         case 15:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E != E
+            if (end->elem_type == type_nonterm && end == start) // E -> E != E
                 result = R_E_NE_E;
             break;
         case 16:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E > E
+            if (end->elem_type == type_nonterm && end == start) // E -> E > E
                 result = R_E_GT_E;
             break;
         case 17:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E < E
+            if (end->elem_type == type_nonterm && end == start) // E -> E < E
                 result = R_E_LT_E;
             break;
         case 18:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E >= E
+            if (end->elem_type == type_nonterm && end == start) // E -> E >= E
                 result = R_E_GE_E;
             break;
         case 19:
             exit = 1;
-            if (end->type == type_nonterminal && end == start) // E -> E <= E
+            if (end->elem_type == type_nonterm && end == start) // E -> E <= E
                 result = R_E_LE_E;
             break;
 
         case 2:
-            if (end->type == type_nonterminal)
+            if (end->elem_type == type_nonterm)
                 state = 20;
             else
                 exit = 1;
             break;
         case 20:
             exit = 1;
-            if (end->type == type_token && end->token->type == L_BRACKET && end == start) // E -> ( E )
+            if (end->elem_type == type_term && end->token_type == L_BRACKET && end == start) // E -> ( E )
                 result = R_LBR_E_RBR;
             break;
         }
 
         end = end->nextPtr;
     }
-
     return result;
 }
 
@@ -288,6 +390,7 @@ int is_delimiter(Token *token)
     }
 }
 
+
 int table_value(PSA_Stack_Elem *elem, Token *token)
 {
     if (elem != NULL && token != NULL)
@@ -296,9 +399,9 @@ int table_value(PSA_Stack_Elem *elem, Token *token)
         int col = -1;
 
         // row
-        if (elem->type == type_token)
+        if (elem->elem_type == type_term)
         {
-            switch (elem->token->type)
+            switch (elem->token_type)
             {
             case EQ_T: case NE_T: case GT_T: case LT_T: case GE_T: case LE_T:
                 row = 0; break;
@@ -316,7 +419,7 @@ int table_value(PSA_Stack_Elem *elem, Token *token)
                 break;
             }
         }
-        else if (elem->type == type_dollar)
+        else if (elem->elem_type == type_dollar)
             row = 6;
 
         // col

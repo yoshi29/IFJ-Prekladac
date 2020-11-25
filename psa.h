@@ -41,9 +41,10 @@ typedef enum {
 
 /**
  * Hlavní funkce precedenční syntaktické analýzy
+ * @param data_type Ukazatel na int, kam se má uložit datový typ výrazu
  * @return Vrací 0 při úspěchu, -1 při chybějícím výrazu, 1-99 v případě chyby
  */
-int psa();
+int psa(int *data_type);
 
 /**
  * Zjistí, zda daný token je operátor
@@ -60,12 +61,19 @@ int is_operator(Token *token);
 int is_delimiter(Token *token);
 
 /**
+ * Provede redukci na zásobníku a zkontroluje sémantiku
+ * @param s Ukazatel na zásobník
+ * @param rule Číslo pravidla pro redukci
+ */
+int reduce(PSA_Stack *s, int rule);
+
+/**
  * Najde pravidlo pro redukci
  * @param start Ukazatel na prvek, kde začíná pravidlo
  * @param end Ukazatel na prvek, kde končí pravidlo
  * @return Při chybě vrací -1, jinak hodnotu z enumu psa_rules
  */
-int check_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end);
+int find_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end);
 
 /**
  * Podle prvku v zásobníku a tokenu na vstupu určí následující akci

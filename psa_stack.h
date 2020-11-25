@@ -10,18 +10,27 @@
 
 #include "error.h"
 #include "scanner.h"
+#include "symtable.h"
 
 
 typedef enum {
-    type_token,
-    type_nonterminal,
+    type_term,
+    type_nonterm,
     type_dollar
 } PSA_Data_Type;
 
 typedef struct t_psa_stack_elem {
-    PSA_Data_Type type; // typ
-    Token *token;   // ukazatel na token (pokud se jedná o token)
+    PSA_Data_Type elem_type; // typ prvku
+
+    tokenType token_type;
+    nodeType node_type;
+
+    string string;
+    int64_t intNumber;
+    double floatNumber;
+
     int reduce; // příznak pro redukci
+    
     struct t_psa_stack_elem *nextPtr;
 } PSA_Stack_Elem;
 
@@ -31,11 +40,22 @@ typedef struct t_psa_stack {
 
 /**
  * Vytvoří nový prvek zásobníku
- * @param type Typ prvku
- * @param token Ukazatel na token (pokud se jedná o token), jinak NULL
+ * @param elem_type Typ prvku
+ * @param type Typ tokenu
+ * @param string Ukazatel na string
+ * @param intNumber Celočíselná hodnota
+ * @param floatNumber Desetinná hodnota
  * @return Vrací ukazatel na nově vytvořený prvek
  */
-PSA_Stack_Elem *elem_create(PSA_Data_Type type, Token *token);
+PSA_Stack_Elem *elem_create(PSA_Data_Type elem_type, tokenType token_type, nodeType node_type, string *string, int64_t intNumber, double floatNumber);
+
+/**
+ * Vytvoří z daného tokenu nový prvek zásobníku
+ * @param elem_type Typ prvku
+ * @param token Ukazatel na token
+ * @return Vrací ukazatel na nově vytvořený prvek
+ */
+PSA_Stack_Elem *elem_create_from_token(PSA_Data_Type elem_type, Token *token);
 
 /**
  * Nastaví, zda je prvek začátek redukce nebo ne
@@ -68,6 +88,13 @@ void stack_push(PSA_Stack *s, PSA_Stack_Elem *elem);
  * @param s Ukazatel na zásobník
  */
 void stack_pop(PSA_Stack *s);
+
+/**
+ * Odstraní několik prvků z vrcholu zásobníku
+ * @param s Ukazatel na zásobník
+ * @param n Počet prvků k odstranění
+ */
+void stack_pop_n(PSA_Stack *s, int n);
 
 /**
  * Vrací ukazatel na prvek, který je na vrcholu zásobníku

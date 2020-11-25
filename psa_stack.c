@@ -5,34 +5,32 @@
 
 #include "psa_stack.h"
 
-
-PSA_Stack_Elem *elem_create(PSA_Data_Type type, Token *token)
+PSA_Stack_Elem *elem_create(PSA_Data_Type elem_type, tokenType token_type, nodeType node_type, string *string, int64_t intNumber, double floatNumber)
 {
     PSA_Stack_Elem *new_elem = (PSA_Stack_Elem *)malloc(sizeof(PSA_Stack_Elem));
     if (new_elem == NULL) return NULL;
 
-    Token *new_token = NULL;
-    if (token != NULL)
-    {
-        new_token = (Token *)malloc(sizeof(Token));
-        if (new_token == NULL)
-        {
-            free(new_elem);
-            return NULL;
-        }
+    new_elem->elem_type = elem_type;
+    new_elem->token_type = token_type;
+    new_elem->node_type = node_type;
+    new_elem->intNumber = intNumber;
+    new_elem->floatNumber = floatNumber;
+    strInit(&(new_elem->string));
+    if (string != NULL)
+        strCopyString(&(new_elem->string), string);
 
-        new_token->type = token->type;
-        strInit(&(new_token->string));
-        strCopyString(&(new_token->string), &(token->string));
-    }
-
-
-    new_elem->type = type;
-    new_elem->token = new_token;
     new_elem->reduce = 0;
     new_elem->nextPtr = NULL;
 
     return new_elem;
+}
+
+PSA_Stack_Elem *elem_create_from_token(PSA_Data_Type elem_type, Token *token)
+{
+    if (token != NULL)
+        return elem_create(elem_type, token->type, -1, &(token->string), token->intNumber, token->floatNumber);
+
+    return NULL;
 }
 
 void elem_set_reduce(PSA_Stack_Elem *elem, int r)
@@ -50,12 +48,7 @@ void elem_destroy(PSA_Stack_Elem *elem)
 {
     if (elem != NULL)
     {
-        if (elem->token != NULL)
-        {
-            strFree(&(elem->token->string));
-            free(elem->token);
-        }
-
+        strFree(&(elem->string));
         free(elem);
     }
 }
@@ -85,6 +78,22 @@ void stack_pop(PSA_Stack *s)
     }
 }
 
+void stack_pop_n(PSA_Stack *s, int n)
+{
+    if (s != NULL && n > 0)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            if (s->topPtr == NULL)
+                break;
+
+            PSA_Stack_Elem *temp = s->topPtr;
+            s->topPtr = s->topPtr->nextPtr;
+            elem_destroy(temp);
+        }
+    }
+}
+
 PSA_Stack_Elem *stack_top(PSA_Stack *s)
 {
     if (s != NULL)
@@ -100,7 +109,7 @@ PSA_Stack_Elem *stack_top_term(PSA_Stack *s)
         PSA_Stack_Elem *current = s->topPtr;
         while (current != NULL)
         {
-            if (current->type == type_token || current->type == type_dollar)
+            if (current->elem_type == type_term || current->elem_type == type_dollar)
                 return current;
 
             current = current->nextPtr;
