@@ -7,7 +7,6 @@
 
 TTree* symTable;
 Token* lastToken;
-TStack stack;
 
 Token* getToken() { 
     int retVal = getNextToken();

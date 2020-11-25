@@ -6,6 +6,8 @@
 
 #include "symtable.h"
 
+TStack stack;
+
 void TSInit(TTree* tree) {
     tree->root = NULL;
     tree->last = NULL; //TODO: Bude potřeba?
@@ -59,6 +61,16 @@ TNode* TSSearch(TNode* root, char* key) {
     else { // Prvek nalezen
         return root;
     }
+}
+
+TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key) {
+    if (stackElem != NULL) {
+        TNode *node = TSSearch(stackElem->node, key);
+        if (node == NULL)
+            node = TSSearchStackAndReturn(stackElem->next, key);
+        return node;
+    }
+    else return NULL;
 }
 
 int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined) {

@@ -13,6 +13,8 @@
 #include "error.h"
 #include "str.h"
 
+extern struct tStack stack;
+
 /*
  * Typ identifikátoru
  */
@@ -75,6 +77,14 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
  * @param key Vyhledávaný klíč
  */
 TNode* TSSearch(TNode* root, char* key);
+
+/**
+ * Hledá klíč v rámci celého zásobníku a vrací ukazatel na prvek s hledaným klíčem
+ * @param stackElem Prvek zásobníku
+ * @param key Hledaný klíč
+ * @return Ukazatel na prvek s daným klíčem, pokud takový prvek neexistuje, vrací NULL
+ */
+TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key);
 
 /**
  * Projde tabulku symbolů a kontroluje, zda splňuje podmínky
