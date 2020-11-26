@@ -273,7 +273,6 @@ int getNextToken(){
                     else if (strCmpConstStr(&s, "float64") == 0)    token->type = DATA_TYPE_FLOAT;
                     else if (strCmpConstStr(&s, "int") == 0)        token->type = DATA_TYPE_INT;
                     else if (strCmpConstStr(&s, "string") == 0)     token->type = DATA_TYPE_STRING;
-                    else if (strCmpConstStr(&s, "nil") == 0)        token->type = DATA_TYPE_NIL;
                     else {
                         token->type = ID;
                         strCopyString(&(token->string), &s);

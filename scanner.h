@@ -50,31 +50,30 @@ typedef enum {
     /*3*/ KEYWORD,
     /*4*/ DATA_TYPE_INT,
     /*5*/ DATA_TYPE_FLOAT,
-    /*6*/ DATA_TYPE_NIL,
-    /*7*/ DATA_TYPE_STRING,
-    /*8*/ ID,
-    /*9*/ UNDERSCORE,
-    /*10*/ L_BRACKET,
-    /*11*/ R_BRACKET,
-    /*12*/ LC_BRACKET,
-    /*13*/ RC_BRACKET,
-    /*14*/ EQ_T, // ==
-    /*15*/ NE_T, // !=
-    /*16*/ GT_T, // >
-    /*17*/ LT_T, // <
-    /*18*/ GE_T, // >=
-    /*19*/ LE_T, // <=
-    /*20*/ PLUS,
-    /*21*/ MINUS,
-    /*22*/ MUL,
-    /*23*/ DIV,
-    /*24*/ EQUALS,
-    /*25*/ COMMA,
-    /*26*/ SEMICOLON,
-    /*27*/ ASSIGN,
-    /*28*/ DEF,
-    /*29*/ EOL_T,
-    /*30*/ EOF_T,
+    /*6*/ DATA_TYPE_STRING,
+    /*7*/ ID,
+    /*8*/ UNDERSCORE,
+    /*9*/ L_BRACKET,
+    /*10*/ R_BRACKET,
+    /*11*/ LC_BRACKET,
+    /*12*/ RC_BRACKET,
+    /*13*/ EQ_T, // ==
+    /*14*/ NE_T, // !=
+    /*15*/ GT_T, // >
+    /*16*/ LT_T, // <
+    /*17*/ GE_T, // >=
+    /*18*/ LE_T, // <=
+    /*19*/ PLUS,
+    /*20*/ MINUS,
+    /*21*/ MUL,
+    /*22*/ DIV,
+    /*23*/ EQUALS,
+    /*24*/ COMMA,
+    /*25*/ SEMICOLON,
+    /*26*/ ASSIGN,
+    /*27*/ DEF,
+    /*28*/ EOL_T,
+    /*29*/ EOF_T,
 } tokenType;
 
 /**

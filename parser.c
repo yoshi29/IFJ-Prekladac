@@ -80,8 +80,6 @@ nodeType nodeTypeFromTokenType(tokenType type) {
             return FLOAT;
         case DATA_TYPE_STRING:
             return STRING;
-        case DATA_TYPE_NIL:
-            return NIL;
         default:
             print_err(ERR_COMPILER);
             exit(ERR_COMPILER);
@@ -186,7 +184,7 @@ int formal_params(int *paramCount, TNode** localTS, int isMain) { //DONE ^^
         strCopyString(&paramName, &(token->string));
 
         getToken();
-        if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
+        if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
             TSInsertOrExitOnDuplicity(localTS, paramName.str, nodeTypeFromTokenType(token->type), true, *paramCount, NULL);
             (*paramCount)++;
 
@@ -210,7 +208,7 @@ int formal_params_opt(int *paramCount, TNode** localTS) { //DONE ^^
             strCopyString(&paramName, &(token->string));
             getToken();
 
-            if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
+            if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
                 TSInsertOrExitOnDuplicity(localTS, paramName.str, nodeTypeFromTokenType(token->type), true, *paramCount, NULL);
                 (*paramCount)++;
 
@@ -246,7 +244,7 @@ int func_ret_types(int isMain) { //DONE ^^
 int types(int isMain) { //DONE ^^
     int retVal = SUCCESS;
 
-    if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
+    if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
         if (isMain == 1) return ERR_SEM_FUNC;
         getToken();
 
@@ -262,7 +260,7 @@ int types_opt() { //DONE ^^
 
     if (token->type == COMMA) { 
         getToken();
-        if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING || token->type == DATA_TYPE_NIL) {
+        if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
             getToken();
             retVal = types_opt();
         }

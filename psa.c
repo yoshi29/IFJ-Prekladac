@@ -233,7 +233,6 @@ int reduce(PSA_Stack *s, int rule)
         else if (current->token_type == INT_T) current->node_type = INT;
         else if (current->token_type == FLOAT_T) current->node_type = FLOAT;
         else if (current->token_type == STRING_T) current->node_type = STRING;
-        //else if (current->token_type == DATA_TYPE_NIL) current->node_type = NIL;
         else return ERR_COMPILER;
 
         return SUCCESS;

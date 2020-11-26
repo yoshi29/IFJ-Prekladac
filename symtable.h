@@ -22,8 +22,7 @@ typedef enum {
     /*0*/ INT,
     /*1*/ FLOAT,
     /*2*/ STRING,
-    /*3*/ NIL,
-    /*4*/ FUNC
+    /*3*/ FUNC
 } nodeType;
 
 /**
@@ -37,7 +36,8 @@ typedef struct tNode {
     nodeType type;          // Typ identifikátoru
     bool isDefined;         // Byl identifikátor definovaný 
     int param;              // Počet parametrů (jde-li o funkci), Pozice parametru (jde-li o parametr funkce)
-    struct tNode* localTS;  // Ukazatel na tabulku symbolů lokální úrovně (jde-li o funkci) //TODO: Pravděpodobně bude třeba localTS = NULL
+    struct tNode* localTS;  // Ukazatel na tabulku symbolů lokální úrovně (jde-li o funkci)
+    struct retType* retTypes; //Návratové typy (jedná-li se o funkci)
 } TNode;
 
 typedef struct tTree {
