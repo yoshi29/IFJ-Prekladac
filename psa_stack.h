@@ -41,7 +41,8 @@ typedef struct t_psa_stack {
 /**
  * Vytvoří nový prvek zásobníku
  * @param elem_type Typ prvku
- * @param type Typ tokenu
+ * @param token_type Typ tokenu
+ * @param node_type Datový typ neterminálu
  * @param string Ukazatel na string
  * @param intNumber Celočíselná hodnota
  * @param floatNumber Desetinná hodnota

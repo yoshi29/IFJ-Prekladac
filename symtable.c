@@ -64,12 +64,16 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
-TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key) {
+TNode *TSSearchStackAndReturn(TStack_Elem *stackElem, char *key) {
+    TNode *node;
     if (stackElem != NULL) {
-        TNode *node = TSSearch(stackElem->node, key);
-        if (node == NULL)
+        if ((node = TSSearch(stackElem->node, key)) == NULL)
             node = TSSearchStackAndReturn(stackElem->next, key);
+
         return node;
+    }
+    else if (currentFuncNode != NULL) {
+        return TSSearch(currentFuncNode->localTS, key);
     }
     else return NULL;
 }

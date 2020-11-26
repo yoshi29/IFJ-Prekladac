@@ -34,7 +34,7 @@ int psa(int *data_type)
         stack_pop(&stack);
         return -1;
     }
-    
+
     while (current_elem->elem_type != type_dollar || !is_delimiter(token))
     {
         int table_result = table_value(current_elem, token);
@@ -61,7 +61,7 @@ int psa(int *data_type)
                 new_elem = new_elem->nextPtr;
 
             elem_set_reduce(new_elem, 1);   // Nastaví prvek jako začátek redukce
-                
+
             getNextToken();
         }
         else if (table_result == R) // > (reduce)
@@ -80,10 +80,9 @@ int psa(int *data_type)
             int rule = find_rule(reduce_start, current_top);
             if (rule == -1)
             {
-                // CHYBA
                 retVal = ERR_SYNTAX;
                 break;
-            }   
+            }
 
             int ret = reduce(&stack, rule);
             if (ret != SUCCESS)
@@ -162,6 +161,9 @@ int reduce(PSA_Stack *s, int rule)
             return ERR_SEM_COMP;
         if (current->node_type == STRING)
             return ERR_SEM_COMP;
+        if ((current->node_type == INT && current->intNumber == 0) || (current->node_type == FLOAT && current->floatNumber == 0.0))
+            return ERR_DIVBYZERO;
+
         stack_pop_n(s, 2);
         elem_set_reduce(stack_top(s), 0);
         return SUCCESS;
@@ -210,6 +212,7 @@ int reduce(PSA_Stack *s, int rule)
 
     case R_LBR_E_RBR: // E -> ( E )
         stack_pop(s);
+        current = stack_top(s);
         PSA_Stack_Elem *new_elem = elem_create(current->elem_type, current->token_type, current->node_type, &(current->string), current->intNumber, current->floatNumber);
         if (new_elem == NULL) return ERR_COMPILER;
         stack_pop_n(s, 2);
