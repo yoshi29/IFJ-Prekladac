@@ -27,7 +27,7 @@ typedef enum {
 } nodeType;
 
 /**
- * Uzel binárího stromu
+ * Uzel binárího stromu - prvek tabulky symbolů
  */
 typedef struct tNode {
     char* key;			    // Klíč
@@ -45,11 +45,17 @@ typedef struct tTree {
     struct tNode* last;
 } TTree;
 
+/**
+ * Prvek zásobníku tabulek symbolů
+ */
 typedef struct tStack_elem {
     struct tNode* node;
     struct tStack_elem* next;
 } TStack_Elem;
 
+/**
+ * Zásobník tabulek symbolů
+ */
 typedef struct tStack {
     struct tStack_elem* top;
 } TStack;
@@ -109,7 +115,23 @@ void TSDispose(TNode* root);
 int TSSearchStack(TStack_Elem* stackElem, char* key);
 
 /**
- * Vloží prvek do tabulky symbolů pouze pokud se v tabulce symbolů doposud nenachází
+ * Hledá klíč v rámci lokálních tabulek tabulky symbolů
+ * @param node Tabulka symbolů
+ * @param key Hledaný klíč
+ * @return 1 v případě nalezení klíče, 0 jinak
+ */
+int TSSearchInLocalTS(TNode* node, char* key);
+
+/**
+ * Hledá klíč v rámci celého zásobníku, ovšem ignorují se klíče s typem FUNC.
+ * @param node Tabulka symbolů
+ * @param key Hledaný klíč
+ * @return 1 v případě nalezení klíče, 0 jinak
+ */
+int TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key);
+
+/**
+ * Vloží prvek do tabulky symbolů pouze pokud se v tabulce symbolů doposud nenachází, jinak exit
  * @param root Ukazatel na kořen stromu
  * @param key Klíč nového uzlu
  * @param type Typ nového uzlu
@@ -119,12 +141,34 @@ int TSSearchStack(TStack_Elem* stackElem, char* key);
  */
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
 
-void TSExitIfNotDefined(TStack_Elem* stackElem, char* key);
+/**
+ * Ukončí program, pokud není daný klíč definovaný
+ * @param stacKElem Ukazatel na prvek zásobníku
+ * @param key Klíč, pro který se provádí kontrola
+ * @param canBeFunc Mají/Nemají se do kontroly zahrnovat prvky, jejichž typ je FUNC
+ */
+void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc);
 
+/**
+ * Inicializace zásobníku tabulek symbolů
+ * @param stack Ukazatel na zásobník
+ */
 void TStackInit(TStack* stack);
 
+/**
+ * Vložení nového prvku zásobníku - rámce
+ * @param stack Ukazatel na zásobník
+ */
 void PushFrame(TStack* stack);
 
+/**
+ * Odstranění prvku zásobníku - rámce
+ * @param stack Ukazatel na zásobník
+ */
 void PopFrame(TStack* stack);
 
+/**
+ * Výpis prvků tabulky symbolů, kromě prvků lokálních tabulek symbolů
+ * @param root Tabulka symbolů
+ */
 void TSPrint(TNode* root);

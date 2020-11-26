@@ -111,10 +111,38 @@ void TSDispose(TNode* root) {
 
 int TSSearchStack(TStack_Elem* stackElem, char* key) {
     if (stackElem != NULL) {
-        if (TSSearch(stackElem->node, key) != NULL) return 1;
+        TNode *node = TSSearch(stackElem->node, key);
+        if (node != NULL && node->isDefined == true) return 1;
         else return TSSearchStack(stackElem->next, key);
     }
     else return 0; //TODO: OK řešení?
+}
+
+int TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key) {
+    TNode* node;
+
+    if (stackElem != NULL) {
+        if ((node = TSSearch(stackElem->node, key)) != NULL && node->isDefined == true) {
+            if (node->type != FUNC) return 1; //Klíč byl nalezen a zároveň se nejedná o funkci
+            else return TSSearchStackExceptFunc(stackElem->next, key);
+        }
+        else if (TSSearchInLocalTS(stackElem->node, key) == 1) return 1; //Klíč nebyl nalezen, prohledáme ještě lokální tabulky
+        else return TSSearchStackExceptFunc(stackElem->next, key);
+    }
+    else return 0; //TODO: OK řešení?
+}
+
+int TSSearchInLocalTS(TNode* node, char* key) {
+    if (node != NULL) {
+        if (node->localTS != NULL) {
+            if (TSSearch(node->localTS, key) != NULL) return 1;
+            else return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
+        }
+        else {
+            return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
+        }
+    }
+    else return 0;
 }
 
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
@@ -125,8 +153,15 @@ void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDe
     else TSInsert(root, key, type, isDefined, param, localTS);
 }
 
-void TSExitIfNotDefined(TStack_Elem* stackElem, char* key) {
-    if (TSSearchStack(stackElem, key) == 0) {
+void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
+    int isDefined;
+    if (canBeFunc) {
+        isDefined = TSSearchStack(stackElem, key);
+    }
+    else {
+        isDefined = TSSearchStackExceptFunc(stackElem, key);
+    }
+    if (isDefined == 0) {
         print_err(ERR_SEM_DEF);
         exit(ERR_SEM_DEF);
     }

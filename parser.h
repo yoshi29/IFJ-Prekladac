@@ -41,6 +41,11 @@ void insert_built_in_funcs();
 void checkFunctionDefinition();
 
 /**
+ * Převod z tokenType na nodeType
+ */
+nodeType nodeTypeFromTokenType(tokenType type);
+
+/**
  * Pravidlo <program> → package main EOL <def_func_o> EOF
  */
 int program();

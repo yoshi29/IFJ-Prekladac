@@ -2,12 +2,15 @@ package main
 
 
 func foo(x int, y int) (int, int) {
-	i := x
+	x = 1
 	j := (y + 2) * 3
-    i, j = j+1, i+1
-	return i, j
+    //i, j = j+1, i+1
+	//return i, j
 }
 
+func main() {
+
+}/*
 func main()() {
 	a := 1
 	b := 2
@@ -25,4 +28,4 @@ func main()() {
 	for x := 2; x < 2; x = x+1 {
 		l := 2
 	}
-}
+}*/
