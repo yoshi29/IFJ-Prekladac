@@ -7,6 +7,7 @@
 #include "symtable.h"
 
 TStack stack;
+TNode* currentFuncNode = NULL;
 
 void TSInit(TTree* tree) {
     tree->root = NULL;
@@ -103,6 +104,14 @@ void TSDispose(TNode* root) {
             root->localTS = NULL;
         }
 
+        RetType* retType = root->retTypes;
+        RetType* next;
+        while (retType != NULL) {
+            next = retType->next;
+            free(retType);
+            retType = next;
+        }
+
         free(root->key);
         free(root);
         root = NULL;
@@ -190,4 +199,19 @@ void PopFrame(TStack* stack) {
         TSDispose(remove->node);
     free(remove);
     remove = NULL;
+}
+
+void addRetType(TNode* node, nodeType type) {
+    RetType* tmp = node->retTypes;
+    while (tmp != NULL) {
+        tmp = tmp->next;
+    }
+
+    RetType* retType = malloc(sizeof(struct retType));
+    if (retType == NULL) {
+        print_err(ERR_COMPILER);
+        exit(ERR_COMPILER);
+    }
+    retType->next = NULL;
+    retType->type = type;
 }

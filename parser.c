@@ -6,7 +6,6 @@
 #include "parser.h"
 
 TTree* symTable;
-Token* lastToken;
 
 Token* getToken() { 
     int retVal = getNextToken();
@@ -36,8 +35,7 @@ int parse(FILE* file) {
 
     token = malloc(sizeof(Token));
     strInit(&(token->string));
-    lastToken = malloc(sizeof(Token));
-    strInit(&(lastToken->string));
+    currentFuncNode = malloc(sizeof(TNode));
 
     getSourceCode(file);
 
@@ -130,9 +128,11 @@ int def_func() { //TODO: ALMOST DONE
     int isMain = 0;
 
     if (strCmpConstStr(&(token->string), "func") == 0 && getToken()->type == ID) {
-        lastToken->type = token->type;
-        strCopyString(&(lastToken->string), &(token->string));
-        if (strCmpConstStr(&lastToken->string, "main") == 0) isMain = 1;
+        string funcName;
+        strInit(&funcName);
+        strCopyString(&funcName, &(token->string));
+
+        if (strCmpConstStr(&funcName, "main") == 0) isMain = 1;
 
         if (getToken()->type == L_BRACKET) { 
             getToken();
@@ -144,8 +144,9 @@ int def_func() { //TODO: ALMOST DONE
             if (retVal != SUCCESS) return retVal;
 
             if (token->type == R_BRACKET) {
-                TSInsertOrExitOnDuplicity(&(stack.top->node), strGetStr(&(lastToken->string)), FUNC, true, paramCount, localTS); //vložení informací o funkci do tabulky symbolů
-
+                TSInsertOrExitOnDuplicity(&(stack.top->node), funcName.str, FUNC, true, paramCount, localTS); //vložení informací o funkci do tabulky symbolů
+                currentFuncNode = TSSearch(stack.top->node, funcName.str);
+                strFree(&funcName);
                 getToken();
                 retVal = func_ret_types(isMain);
                 if (retVal != SUCCESS) return retVal;
@@ -246,6 +247,7 @@ int types(int isMain) { //DONE ^^
 
     if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
         if (isMain == 1) return ERR_SEM_FUNC;
+        addRetType(currentFuncNode, nodeTypeFromTokenType(token->type));
         getToken();
 
         retVal = types_opt();
@@ -261,6 +263,7 @@ int types_opt() { //DONE ^^
     if (token->type == COMMA) { 
         getToken();
         if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
+            addRetType(currentFuncNode, nodeTypeFromTokenType(token->type));
             getToken();
             retVal = types_opt();
         }

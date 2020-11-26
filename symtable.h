@@ -14,6 +14,7 @@
 #include "str.h"
 
 extern struct tStack stack;
+extern struct tNode* currentFuncNode;
 
 /*
  * Typ identifikátoru
@@ -59,6 +60,11 @@ typedef struct tStack_elem {
 typedef struct tStack {
     struct tStack_elem* top;
 } TStack;
+
+typedef struct retType {
+    nodeType type;
+    struct retType* next;
+} RetType;
 
 /**
  * Inicializuje tabulku symbolů
@@ -172,3 +178,5 @@ void PopFrame(TStack* stack);
  * @param root Tabulka symbolů
  */
 void TSPrint(TNode* root);
+
+void addRetType(TNode* node, nodeType type);
