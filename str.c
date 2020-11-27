@@ -1,3 +1,4 @@
+//Pøevzato z veøejných stránek pøedmìtu s privátními materiály (http://www.fit.vutbr.cz/study/courses/IFJ/public/project/), ze souboru jednoduchy_interpret.zip
 //jednoducha knihovna pro praci s nekonecne dlouhymi retezci
 #include "str.h"
 

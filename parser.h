@@ -133,9 +133,9 @@ int return_val();
 int params_opt();
 
 /*
- * Nepovinné další identifikátory, nebo výrazy
+ * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení
  */
-int ids_exprs_opt();
+int ids_exprs_opt(int* rParamCnt);
 
 /**
  * If
@@ -175,14 +175,14 @@ int def_var();
  * Pravidlo <after_id> → <def_var>
  * Pravidlo <after_id> → <ids_lo>
  */
-int after_id(char* idName);
+int after_id(char* idName, int* lParamCnt);
 
 /**
  * Nepovinné další identifikátory na levé straně přiřazení
  * Pravidlo <ids_lo> → ε
  * Pravidlo <ids_lo> → , <ids_l> <ids_lo>
  */
-int ids_l_opt();
+int ids_l_opt(int* lParamCnt);
 
 /**
  * Identifikátor nebo _
@@ -209,10 +209,10 @@ int params();
  * Pravidlo <assign_r> → <expr> <exprs_o>
  * Pravidlo <assign_r> → id <func>
  */
-int assign_r();
+int assign_r(int* lParamCnt);
 
 /**
- * Přiřazení
+ * Přiřazení ve for cyklu
  * Pravidlo <assign> → id <ids_lo> = <assign_r>
  * Pravidlo <assign> → _ <ids_lo> = <assign_r>
  * Pravidlo <assign> → ε

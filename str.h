@@ -1,4 +1,6 @@
+//Pøevzato z veøejných stránek pøedmìtu s privátními materiály (http://www.fit.vutbr.cz/study/courses/IFJ/public/project/), ze souboru jednoduchy_interpret.zip
 //hlavickovy soubor pro praci s nekonecne dlouhymi retezci
+
 #pragma once
 #include <string.h>
 #include <malloc.h>

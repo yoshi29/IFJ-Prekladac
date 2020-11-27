@@ -92,7 +92,7 @@ int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined) {
 
 void TSPrint(TNode* root) {
     if (root != NULL) {
-        printf("--- Printing: %s\n", root->key);
+        //printf("--- Printing: %s\n", root->key);
         TSPrint(root->lptr);
         TSPrint(root->rptr);
     }

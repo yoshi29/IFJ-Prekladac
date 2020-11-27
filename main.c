@@ -9,7 +9,7 @@ int main() {
     FILE* file = stdin;
 
     int retVal = parse(file);
-    printf(">> PARSING: %i\n", retVal);
+    //printf(">> PARSING: %i\n", retVal);
     print_err(retVal); //Zatím pro test
 }
 
