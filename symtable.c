@@ -139,12 +139,13 @@ int TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key) {
             if (node->type != FUNC) return 1; //Klíč byl nalezen a zároveň se nejedná o funkci
             else return TSSearchStackExceptFunc(stackElem->next, key);
         }
-        else if (TSSearchInLocalTS(stackElem->node, key) == 1) return 1; //Klíč nebyl nalezen, prohledáme ještě lokální tabulky
+        else if (TSSearch(currentFuncNode->localTS, key)) return 1; //Klíč nebyl nalezen, prohledáme ještě lokální tabulky
         else return TSSearchStackExceptFunc(stackElem->next, key);
     }
     else return 0; //TODO: OK řešení?
 }
 
+/*
 int TSSearchInLocalTS(TNode* node, char* key) {
     if (node != NULL) {
         if (node->localTS != NULL) {
@@ -157,6 +158,7 @@ int TSSearchInLocalTS(TNode* node, char* key) {
     }
     else return 0;
 }
+*/
 
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice

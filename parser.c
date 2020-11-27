@@ -409,6 +409,7 @@ int for_f() {
         if (token->type == SEMICOLON) {
             getToken();
             retVal = assign();
+            if (retVal != SUCCESS) return retVal;
             if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
                 PushFrame(&stack); //Začátek těla for
                 getNonEolToken();
@@ -424,19 +425,18 @@ int for_f() {
         else return ERR_SYNTAX;
     }
     else return ERR_SYNTAX;
-
     return retVal;
 }
 
 int def() {
     int retVal = SUCCESS;
+    PushFrame(&stack); //Začátek definiční části for cyklu
 
     if (token->type == ID) {
         string idName;
         strInit(&idName);
         strCopyString(&idName, &(token->string));
 
-        PushFrame(&stack); //Začátek definiční části for cyklu
         getToken();
         retVal = def_var(idName.str);
         strFree(&idName);
@@ -488,8 +488,15 @@ int ids_l_opt() { //DONE ^^ HERE
     int retVal = SUCCESS;
 
     if (token->type == COMMA) {
-        if (getToken()->type == ID) {
+        getToken();
+        if (token->type == ID) {
             TSExitIfNotDefined(stack.top, token->string.str, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
+            getToken();
+            retVal = ids_l();
+            if (retVal != SUCCESS) return ERR_SYNTAX;
+            retVal = ids_l_opt();
+        }
+        else if (token->type == UNDERSCORE) {
             getToken();
             retVal = ids_l();
             if (retVal != SUCCESS) return ERR_SYNTAX;
@@ -543,6 +550,7 @@ int assign_r() {
     int data_type;
     int retVal = psa(&data_type);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+
     retVal = ids_exprs_opt();
     return retVal;
 }
@@ -580,7 +588,6 @@ int assign() {
 
 int else_f() { //DONE ^^
     int retVal = SUCCESS;
-
     if (strCmpConstStr(&(token->string), "else") == 0) {
         if (getToken()->type == LC_BRACKET && getToken()->type == EOL_T) {
             PushFrame(&stack); //Začátek těla else

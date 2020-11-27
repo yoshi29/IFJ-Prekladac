@@ -3,7 +3,7 @@ package main
 
 func foo(x int, y int) (int, int) {
 	x = 1
-	j := (y + 2) * 3
+	//j := (y + 2) * 3
     //i, j = j+1, i+1
 	//return i, j
 }
