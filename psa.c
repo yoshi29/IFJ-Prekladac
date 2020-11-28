@@ -25,6 +25,8 @@ int psa(int *data_type)
     PSA_Stack stack;
     stack_init(&stack);
 
+    int check_function = 0;
+
     // Do zásobníku se vloží $ pro označení dna zásobníku
     PSA_Stack_Elem *current_elem = elem_create(type_dollar, -1, -1, NULL, 0, 0);
     stack_push(&stack, current_elem);
@@ -34,6 +36,8 @@ int psa(int *data_type)
         stack_pop(&stack);
         return -1;
     }
+    else if (token->type == ID) // Na vstupu je ID, mohlo by se jednat o funkci
+        check_function = 1;
 
     while (current_elem->elem_type != type_dollar || !is_delimiter(token))
     {
@@ -110,6 +114,15 @@ int psa(int *data_type)
             retVal = ERR_SYNTAX;
             break;
         }
+
+        if (check_function && token->type == L_BRACKET) // Jedná se o funkci
+        {
+            check_function = 0;
+            retVal = func();
+            break;
+        }
+        else if (check_function && token->type != ID)
+            check_function = 0;
 
         current_elem = stack_top_term(&stack);
     }
