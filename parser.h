@@ -67,6 +67,8 @@ int def_func();
  * Nepovinné formální parametry funkce
  * Pravidlo <f_params> → id <type> <f_params_o>
  * Pravidlo <f_params> → ε
+ * @param paramCount Počítadlo formálních parametrů funkce
+ * @param localTS Lokální tabulka symbolů, do které budou uloženy formální parametry funkce
  * @param isMain 1 pokud se jedná o funkci main, 0 jinak
  */
 int formal_params(int* paramCount, TNode** localTS, int isMain);
@@ -75,6 +77,8 @@ int formal_params(int* paramCount, TNode** localTS, int isMain);
  * Nepovinné formální parametry funkce
  * Pravidlo <f_params_o> → , id <type> <f_params_o>
  * Pravidlo <f_params_o> → ε
+ * @param paramCount Počítadlo formálních parametrů funkce
+ * @param localTS Lokální tabulka symbolů, do které budou uloženy formální parametry funkce
  */
 int formal_params_opt(int* paramCount, TNode** localTS);
 
@@ -89,6 +93,7 @@ int func_ret_types(int isMain);
 /**
  * Datový typ, případně další oddělené čárkou
  * Pravidlo <types> → <type> <types_o>
+ * @param isMain 1 pokud se jedná o funkci main, 0 jinak
  */
 int types(int isMain);
 
@@ -122,15 +127,9 @@ int return_f();
  * Pravidlo <return_v> → ε 
  * Pravidlo <return_v> → id <ids_o>
  * Pravidlo <return_v> → <expr> <exprs_o>
+ * @param rParamCnt Počítadlo návratových hodnot
  */
-int return_val();
-
-/**
- * Nepovinné další identifikátory
- * Pravidlo <params_o> → ε 
- * Pravidlo <params_o> → , id <params_o>
- */
-int params_opt();
+int return_val(int* retParamCnt);
 
 /*
  * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení
@@ -166,14 +165,17 @@ int def();
  * Definice proměnné
  * Pravidlo <def_var> → ε
  * Pravidlo <def> → id <def_var>
+ * @param idName Název ID, které se aktuálně definuje
  */
-int def_var();
+int def_var(char* idName);
 
 /**
  * Neterminály, které mohou následovat za id v těle funkce
  * Pravidlo <after_id> → <func>
  * Pravidlo <after_id> → <def_var>
  * Pravidlo <after_id> → <ids_lo>
+ * @param idName Název ID, které předcházelo
+ * @param lParamCnt Počítadlo parametrů levé strany přiřazení
  */
 int after_id(char* idName, int* lParamCnt);
 
@@ -181,6 +183,7 @@ int after_id(char* idName, int* lParamCnt);
  * Nepovinné další identifikátory na levé straně přiřazení
  * Pravidlo <ids_lo> → ε
  * Pravidlo <ids_lo> → , <ids_l> <ids_lo>
+ * @param lParamCnt Počítadlo parametrů levé strany přiřazení
  */
 int ids_l_opt(int* lParamCnt);
 
@@ -194,15 +197,29 @@ int ids_l();
 /**
  * Volání funkce
  * Pravidlo <func> → ( <params> )
+ * @param retParamCnt Počítadlo parametrů pravé strany přiřazení
+ * @param paramCnt Počítadlo parametrů funkce
+ * @param funcName Jméno funkce
  */
-int func();
+int func(int* retParamCnt, int* paramCnt, char* funcName);
 
 /**
  * Parametry funkce
  * Pravidlo <params> → ε
  * Pravidlo <params> → id <params_o>
+ * @param paramCnt Počítadlo parametrů funkce
+ * @paral localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
  */
-int params();
+int params(int* paramCnt, TNode** localTS);
+
+/**
+ * Nepovinné další identifikátory
+ * Pravidlo <params_o> → ε
+ * Pravidlo <params_o> → , id <params_o>
+ * @param paramCnt Počítadlo parametrů funkce
+ * @paral localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
+ */
+int params_opt(int* paramCnt, TNode** localTS);
 
 /**
  * Pravá strana přiřazení

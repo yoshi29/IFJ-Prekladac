@@ -42,9 +42,11 @@ typedef enum {
 /**
  * Hlavní funkce precedenční syntaktické analýzy
  * @param data_type Ukazatel na int, kam se má uložit datový typ výrazu
+ * @param paramCnt Ukazatel na int, kam se má uložit 1 v případě, že byla načtena funkce
+ * @param paramCnt Ukazatel na int, kam se má uložit 0 v případě, že byla načtena funkce, hodnotu rParamCnt má nastavit jiná funkce
  * @return Vrací 0 při úspěchu, -1 při chybějícím výrazu, 1-99 v případě chyby
  */
-int psa(int *data_type);
+int psa(int* data_type, int* paramCnt, int* rParamCnt);
 
 /**
  * Zjistí, zda daný token je operátor

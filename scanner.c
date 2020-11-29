@@ -35,8 +35,8 @@ int getNextToken(){
                 else if (c == '{') token->type = LC_BRACKET;
                 else if (c == '}') token->type = RC_BRACKET;
                 else if (c == ';') token->type = SEMICOLON;
-                else if (c == '+') token->type = PLUS; //TODO: Nastavit stav, kdy to může být +, anebo kladné číslo; řešit asi podobně jako třeba LE_T_STATE
-                else if (c == '-') token->type = MINUS; //TODO: Nastavit stav, kdy to může být -, anebo záporné číslo; řešit asi podobně jako třeba LE_T_STATE
+                else if (c == '+') token->type = PLUS; 
+                else if (c == '-') token->type = MINUS; 
                 else if (c == '*') token->type = MUL;
                 else if (c == ',') token->type = COMMA;
                 else if (c == '/') state = COMMENT_STATE;
@@ -346,7 +346,7 @@ int getNextToken(){
     }
 }
 
-void newToken(tokenType type, string *s, int c) { //TODO: Upravit jak bude třeba
+void newToken(tokenType type, string *s, int c) {
     token->type = type;
     if (type == INT_T) {
         token->intNumber = strtoll(strGetStr(s), NULL, 10);

@@ -1,17 +1,33 @@
-// Program 1: Vypocet faktorialu (iterativne)
+// Program 2: Vypocet faktorialu (rekurzivne)
 package main
 
-func main() {
-  print("Zadejte cislo pro vypocet faktorialu: ")
-  a := 0
-  //a, _ = inputi()
-  if a < 0 {
-    print("Faktorial nejde spocitat!\n")
+func factorial(n int) (int) {
+  dec_n := n - 1
+  a := n
+  if n < 2 {
+    return 1
   } else {
-    vysl := 1
-    for ; a > 0; a = a - 1 {
-      vysl = vysl * a
+    tmp := 0
+    tmp = factorial(dec_n)
+        return n * tmp
+  }
+}
+
+
+func main() {
+  //print("Zadejte cislo pro vypocet faktorialu: ")
+  a := 0
+  err := 0
+  //a, err = inputi()
+  if err == 0 {
+    if a < 0 {
+      //print("Faktorial nejde spocitat!", "\n") //Zatím vím, že nefunguje
+    } else {
+      //vysl := 0
+      //vysl = factorial(a)
+      //print("Vysledek je ", vysl, "\n")
     }
-    print("Vysledek je ", vysl, "\n")
+  } else {
+    //print("Chyba pri nacitani celeho cisla!\n")	
   }
 }

@@ -59,6 +59,7 @@ typedef struct tStack_elem {
  */
 typedef struct tStack {
     struct tStack_elem* top;
+    struct tStack_elem* bottom;
 } TStack;
 
 typedef struct retType {
@@ -81,7 +82,7 @@ void TSInit(TTree *tree);
  * @param param Počet parametrů (jde-li o funkci), Pozice parametru (jde-li o parametr funkce)
  * @param localTS Ukazatel na tabulku symbolů lokální úrovně (jde-li o funkci)
  */
-void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
+TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS);
 
 /**
  * Rekurzivně vyhledá prvek dle klíče
@@ -156,6 +157,24 @@ void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDe
 void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc);
 
 /**
+ * Vloží funkci do tabulky symbolů, pokud ještě nebyla definována
+ * Pokud již v tabulkce symbolů funkce je, tak se provede kontrola, jestli sedí počty/typy parametrů
+ * @param stacKElem Ukazatel na prvek zásobníku
+ * @param key Klíč
+ * @param param Počet parametrů funkce Mají/Nemají se do kontroly zahrnovat prvky, jejichž typ je FUNC
+ * @param localTS Lokální tabulka symbolů
+ * @param retValCnt Ukazatel, přes který se vrací počet návratových hodnot
+ */
+void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* retValCnt);
+
+/**
+ * Porovná dvě tabulky symbolů (param, nodeType)
+ * @param firstNode
+ * @param secondNode
+ */
+int TSCompare(TNode* firstNode, TNode* secondNode);
+
+/**
  * Inicializace zásobníku tabulek symbolů
  * @param stack Ukazatel na zásobník
  */
@@ -179,4 +198,6 @@ void PopFrame(TStack* stack);
  */
 void TSPrint(TNode* root);
 
-void addRetType(TNode* node, nodeType type);
+void addRetType(RetType** retType, nodeType type);
+
+int countRetTypes(TNode* node);

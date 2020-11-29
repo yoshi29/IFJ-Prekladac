@@ -47,8 +47,9 @@ int parse(FILE* file) {
 }
 
 void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně v tabulkce symbolů bude
-    TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL);
-
+    TStack_Elem* stackBottom = malloc(sizeof(struct tStack_elem));
+    stack.bottom = stackBottom;
+    stack.bottom->node = TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL);
     TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL);
     TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL);
 
@@ -73,11 +74,11 @@ void checkFunctionDefinition() { //TODO: Možná ještě bude potřeba otestovat
 
 nodeType nodeTypeFromTokenType(tokenType type) {
     switch (type) {
-        case DATA_TYPE_INT: 
+        case DATA_TYPE_INT: case INT_T:
             return INT;
-        case DATA_TYPE_FLOAT:
+        case DATA_TYPE_FLOAT: case FLOAT_T:
             return FLOAT;
-        case DATA_TYPE_STRING:
+        case DATA_TYPE_STRING: case STRING_T:
             return STRING;
         default:
             print_err(ERR_COMPILER);
@@ -120,11 +121,11 @@ int def_func_opt() { //DONE ^^
         }
     }
 
-    //printf("DEF_FUNC_OPT: %i\n", retVal);
+    printf("DEF_FUNC_OPT: %i\n", retVal);
     return retVal;
 }
 
-int def_func() { //TODO: ALMOST DONE
+int def_func() { 
     int retVal = ERR_SYNTAX;
     int isMain = 0;
 
@@ -138,7 +139,7 @@ int def_func() { //TODO: ALMOST DONE
         if (getToken()->type == L_BRACKET) { 
             getToken();
 
-            int paramCount = 0; //Počítadlo parametrů funkce
+            int paramCount = 0; //Počítadlo formálních parametrů funkce
             TNode* localTS = NULL;
 
             retVal = formal_params(&paramCount, &localTS, isMain);
@@ -154,7 +155,6 @@ int def_func() { //TODO: ALMOST DONE
 
                 if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
                     PushFrame(&stack); //Začátek těla funkce
-
                     getNonEolToken();
                     retVal = body();
 
@@ -173,7 +173,7 @@ int def_func() { //TODO: ALMOST DONE
         else retVal = ERR_SYNTAX;
     }
 
-    //printf("DEF_FUNC: %i\n", retVal);
+    printf("DEF_FUNC: %i\n", retVal);
     return retVal;
 }
 
@@ -198,7 +198,7 @@ int formal_params(int *paramCount, TNode** localTS, int isMain) { //DONE ^^
         strFree(&paramName);
     }
 
-    //printf("FORMAL_PARAMS: %i\n", retVal);
+    printf("FORMAL_PARAMS: %i\n", retVal);
     return retVal;
 }
 
@@ -225,7 +225,7 @@ int formal_params_opt(int *paramCount, TNode** localTS) { //DONE ^^
         else retVal = ERR_SYNTAX;
     }
 
-    //printf("FORMAL_PARAMS_OPT: %i\n", retVal);
+    printf("FORMAL_PARAMS_OPT: %i\n", retVal);
     return retVal;
 }
 
@@ -240,7 +240,7 @@ int func_ret_types(int isMain) { //DONE ^^
         getToken();
     }
 
-    //printf("FUNC_RET_TYPES: %i\n", retVal);
+    printf("FUNC_RET_TYPES: %i\n", retVal);
     return retVal;
 }
 
@@ -248,14 +248,16 @@ int types(int isMain) { //DONE ^^
     int retVal = SUCCESS;
 
     if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
-        if (isMain == 1) return ERR_SEM_FUNC;
-        addRetType(currentFuncNode, nodeTypeFromTokenType(token->type));
+        if (isMain == 1) return ERR_SEM_FUNC; //Funkce main nesmí mít žádné návratové typy
+        addRetType(&currentFuncNode->retTypes, nodeTypeFromTokenType(token->type));
+        printf("--- current func: %s\n", currentFuncNode->key);
+        if (currentFuncNode->retTypes == NULL) printf("---NULL\n");
         getToken();
 
         retVal = types_opt();
     }
 
-    //printf("TYPES: %i\n", retVal);
+    printf("TYPES: %i\n", retVal);
     return retVal;
 }
 
@@ -265,14 +267,14 @@ int types_opt() { //DONE ^^
     if (token->type == COMMA) { 
         getToken();
         if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
-            addRetType(currentFuncNode, nodeTypeFromTokenType(token->type));
+            addRetType(&currentFuncNode->retTypes, nodeTypeFromTokenType(token->type));
             getToken();
             retVal = types_opt();
         }
         else retVal = ERR_SYNTAX;
     }
 
-    //printf("TYPES_OPT: %i\n", retVal);
+    printf("TYPES_OPT: %i\n", retVal);
     return retVal;
 }
 
@@ -302,7 +304,7 @@ int body() { //DONE ^^
         retVal = body();
     }
     else if (token->type == ID) { //<body> → id <after_id> EOL <body>
-        int lParamCnt = 1;
+        int lParamCnt = 1; //Bylo načteno 1. ID levé strany přiřazení
         string idName;
         strInit(&idName);
         strCopyString(&idName, &(token->string));
@@ -316,7 +318,7 @@ int body() { //DONE ^^
         retVal = body();
     }
     else if (token->type == UNDERSCORE) { //<body> → _ <ids_lo> = <assign_r> EOL <body>
-        int lParamCnt = 1;
+        int lParamCnt = 1; //Byl načten první prvek levé strany přiřazené
         getToken();
         retVal = ids_l_opt(&lParamCnt);
         if (retVal != SUCCESS) return retVal;
@@ -329,59 +331,41 @@ int body() { //DONE ^^
         retVal = body();
     }
 
-    //printf("BODY: %i\n", retVal);
+    printf("BODY: %i\n", retVal);
     return retVal;
 }
 
 int return_f() { //DONE ^^
-    int rParamCnt = 0;
+    int rParamCnt = 0; //Počítadlo návratových hodnot
     if (return_val(&rParamCnt) == SUCCESS) {
         if (token->type == EOL_T) {
             getNonEolToken();
-            //printf("RETURN_F: %i\n", 0);
+            printf("RETURN_F: %i\n", 0);
             return SUCCESS;
         }
         else return ERR_SYNTAX; 
     }
     else {
-        //printf("RETURN_F: %i\n", 2);
+        printf("RETURN_F: %i\n", 2);
         return ERR_SYNTAX;
     }
 }
 
-int return_val(int* rParamCnt) {
-    int data_type;
-    int retVal = psa(&data_type);
+int return_val(int* retParamCnt) { //TODO: Kontrola počtu návratových hodnot
+    int data_type, paramCnt; 
+    int retVal = psa(&data_type, &paramCnt, retParamCnt); //Psa může zvýšit paramCnt
     if (retVal != SUCCESS) return SUCCESS;
-    *rParamCnt = *rParamCnt + 1;
+    *retParamCnt = *retParamCnt + 1; //TODO: Nebude tu někdy o 1 navíc, třeba kvůli návratovým hodnotám funkce?
 
-    retVal = ids_exprs_opt(rParamCnt);
+    retVal = ids_exprs_opt(retParamCnt);
     if (retVal == -1) retVal = SUCCESS;
-    return retVal;
-}
-
-int params_opt() { //TODO: Možná se ještě podívat na opt EOL
-    int retVal = SUCCESS;
-    
-    if (token->type == COMMA) {
-        getToken();
-        if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
-            if (token->type == ID) {
-                TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
-            }
-            getToken();
-            retVal = params_opt();
-        }
-    }
-
-    //printf("IDS_OPT: %i\n", retVal);
     return retVal;
 }
 
 int if_f() {
     //Minulý token byl if
-    int data_type;
-    int retVal = psa(&data_type);
+    int data_type, paramCnt, rParamCnt; //Zde nevyužito
+    int retVal = psa(&data_type, &paramCnt, &rParamCnt);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
@@ -407,8 +391,8 @@ int for_f() {
 
     if (token->type == SEMICOLON) {
         getToken();
-        int data_type;
-        retVal = psa(&data_type);
+        int data_type, paramCnt, rParamCnt;
+        retVal = psa(&data_type, &paramCnt, &rParamCnt);
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         if (token->type == SEMICOLON) {
             getToken();
@@ -449,13 +433,13 @@ int def() {
     return retVal;
 }
 
-int def_var(char* idName) { //TODO: vkládání do symtable by se asi nedělalo v after_id, ale zde, kde bychom dostali informaci o typu od psa()
+int def_var(char* idName) {
     int retVal = ERR_SYNTAX;
 
     if (token->type == DEF) {
         getToken();
-        int data_type;
-        retVal = psa(&data_type);
+        int data_type, paramCnt, rParamCnt;
+        retVal = psa(&data_type, &paramCnt, &rParamCnt);
         if (retVal == -1) retVal = ERR_SYNTAX;
         TSInsertOrExitOnDuplicity(&(stack.top->node), idName, data_type, true, 0, NULL);
     }
@@ -465,12 +449,15 @@ int def_var(char* idName) { //TODO: vkládání do symtable by se asi nedělalo 
 
 int after_id(char* idName, int* lParamCnt) { //DONE ^^
     int retVal = ERR_SYNTAX;
+    int paramCnt;
 
     if (token->type == L_BRACKET) { //<after_id> → <func>
-        //TODO: Insert do &stack.top, potřeba získat počet parametrů a lokální TS, udělat podobně jako při definici funkce; 
-        //bude-li už definovaná, kontrola typů/pořadí/počtu parametrů - (pokud bude sedět, přepis klíčů na reálně použité?; 
-        //isDefined funkce ale musí zůstat na true), pokud nebude sedět pak hodit patřičnou chybu
-        retVal = func();
+        int retParamCnt = 0;
+        *lParamCnt = 0; //Přečtené ID nebude přiřazováno, jelikož se jedná o název funkce
+        retVal = func(&retParamCnt, &paramCnt, idName);
+        printf("--- lParam %i : rParam %i\n", *lParamCnt, retParamCnt);
+
+        if (*lParamCnt != retParamCnt) return ERR_SEM_FUNC; //Kontrola počtu parametrů na levé a pravé straně
     }
     else if (token->type == DEF) { //<after_id> → <def_var>
         retVal = def_var(idName);
@@ -483,23 +470,7 @@ int after_id(char* idName, int* lParamCnt) { //DONE ^^
         retVal = assign_r(lParamCnt);
     }
 
-    //printf("AFTER_ID: %i\n", retVal);
-
-    return retVal;
-}
-
-int ids_l_opt(int* lParamCnt) { //DONE ^^ HERE
-    int retVal = SUCCESS;
-
-    if (token->type == COMMA) {
-        getToken();
-        retVal = ids_l();
-        *lParamCnt = *lParamCnt + 1;
-        if (retVal != SUCCESS) return retVal;
-        retVal = ids_l_opt(lParamCnt);
-    }
-
-    //printf("IDS_L_OPT: %i\n", retVal);
+    printf("AFTER_ID: %i\n", retVal);
     return retVal;
 }
 
@@ -516,64 +487,116 @@ int ids_l() {
     else return ERR_SYNTAX;
 }
 
-int func() { //DONE ^^
-    int retVal = ERR_SYNTAX;
+int ids_l_opt(int* lParamCnt) { //DONE ^^
+    int retVal = SUCCESS;
 
-    if (token->type == L_BRACKET) {
-        getNonEolToken(); //za závorkou možný EOL
-        retVal = params();
-        if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
-        getNextToken();
+    if (token->type == COMMA) {
+        getToken();
+        retVal = ids_l();
+        *lParamCnt = *lParamCnt + 1;
+        if (retVal != SUCCESS) return retVal;
+        retVal = ids_l_opt(lParamCnt);
     }
 
-    //printf("FUNC: %i\n", retVal);
+    printf("IDS_L_OPT: %i\n", retVal);
     return retVal;
 }
 
-int params() {
+int func(int* retParamCnt, int* paramCnt, char* funcName) { //DONE ^^
+    int retVal = ERR_SYNTAX;
+    *paramCnt = 0; //Bude načítán první parametr funkce
+    TNode* localTS = NULL;
+
+    if (token->type == L_BRACKET) {
+        getNonEolToken(); //za závorkou možný EOL
+        retVal = params(paramCnt, &localTS);
+        if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
+
+        //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
+        TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt); //bude-li už definovaná, kontrola typů/pořadí/počtu parametrů - (pokud bude sedět, přepis klíčů na reálně použité?; 
+        getNextToken();
+    }
+
+    printf("FUNC: %i\n", retVal);
+    return retVal;
+}
+
+int params(int *paramCnt, TNode** localTS) {
     int retVal = SUCCESS;
-    
+
     if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
         if (token->type == ID) {
             TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
+            //TODO: Insert s tím, že se na stacku vyhledá datový typ ID
         }
+        else {
+            TSInsert(localTS, "", nodeTypeFromTokenType(token->type), true, *paramCnt, NULL); //TODO: Jméno parametru funkce není důležité, ale nebude zde vadit ""?
+        }
+        *paramCnt = *paramCnt + 1; //Načten další parametr funkce
         getToken();
-        retVal = params_opt();
+        retVal = params_opt(paramCnt, localTS);
     }
 
+    return retVal;
+}
+
+int params_opt(int* paramCnt, TNode** localTS) { //TODO: Možná se ještě podívat na opt EOL
+    int retVal = SUCCESS;
+
+    if (token->type == COMMA) {
+        getToken();
+        if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
+            if (token->type == ID) {
+                TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
+                *paramCnt = *paramCnt + 1;
+                if (token->type == ID) { //TODO: Nutné vyhledat datový typ ID
+                }
+                else {
+                    TSInsert(localTS, "", nodeTypeFromTokenType(token->type), true, *paramCnt, NULL); //TODO: Jméno parametru funkce není důležité, ale nebude zde vadit ""?
+                }
+            }
+            getToken();
+            retVal = params_opt(paramCnt, localTS);
+        }
+    }
+
+    printf("IDS_OPT: %i\n", retVal);
     return retVal;
 }
 
 int assign_r(int* lParamCnt) { 
     int data_type;
-    int retVal = psa(&data_type);
+    int paramCnt = 0; //Začínají se počítat parametry pravé strany přiřazení
+    int rParamCnt = 1; //Pokud by nebyla v psa načtena funkce, ale id, tak na pravé straně bude nyní 1 hodnota (id); pokud byla načtena funkce, rParamCnt bude přes psa změněno na počet návratových hodnot funkce
+    int retVal = psa(&data_type, &paramCnt, &rParamCnt);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
-    int rParamCnt = 1;
 
-    retVal = ids_exprs_opt(&rParamCnt);
+    retVal = ids_exprs_opt(&rParamCnt); //Počítání dalších možných ID na pravé straně přiřazení
+    //printf("--- lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
     if (retVal != SUCCESS) return retVal;
-    //if (*lParamCnt != rParamCnt) return ERR_SEM_FUNC; //TODO: Nemůže být odkomentováno, dokud se nebudou do rParamCnt připočítávat návratové hodnoty funkce
-    if (*lParamCnt != rParamCnt) {} //Pouze, aby nenastávaly warningy ohledně nepoužívané proměnné, pak odstranit
+    if (*lParamCnt != rParamCnt) return ERR_SEM_FUNC;
     return retVal;
 }
 
 int ids_exprs_opt(int* rParamCnt) {
     int retVal = SUCCESS;
+    int tmp = *rParamCnt;
 
     if (token->type == COMMA) {
         getToken();
-        int data_type;
-        retVal = psa(&data_type);
+        int data_type, paramCnt;
+        retVal = psa(&data_type, &paramCnt, rParamCnt);
+
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
-        *rParamCnt = *rParamCnt + 1;
+        if (tmp == *rParamCnt) *rParamCnt = *rParamCnt + 1;
         retVal = ids_exprs_opt(rParamCnt);
     }
 
-    //printf("IDS_EXPR_OPT: %i\n", retVal);
+    printf("IDS_EXPR_OPT: %i\n", retVal);
     return retVal;
 }
 
-int assign() {
+int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, zatím netestováno
     int retVal = SUCCESS;
 
     if (token->type == ID || token->type == UNDERSCORE) {
@@ -604,6 +627,6 @@ int else_f() { //DONE ^^
         }
         else retVal = ERR_SYNTAX;
     }
-    //printf("ELSE_F: %i\n", retVal);
+    printf("ELSE_F: %i\n", retVal);
     return retVal;
 }

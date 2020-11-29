@@ -10,6 +10,7 @@ int main() {
 
     int retVal = parse(file);
     //printf(">> PARSING: %i\n", retVal);
-    print_err(retVal); //Zatím pro test
+    //print_err(retVal); //Zatím pro test
+    return retVal;
 }
 

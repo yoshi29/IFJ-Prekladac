@@ -5,6 +5,8 @@
 
 #include "psa.h"
 
+char* funcName;
+
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -17,7 +19,7 @@ static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
         { S , S , S , S , X , S , X }   // $
 };
 
-int psa(int *data_type)
+int psa(int *data_type, int *paramCnt, int *retParamCnt)
 {
     int retVal = SUCCESS;
 
@@ -36,8 +38,14 @@ int psa(int *data_type)
         stack_pop(&stack);
         return -1;
     }
-    else if (token->type == ID) // Na vstupu je ID, mohlo by se jednat o funkci
+    else if (token->type == ID) { // Na vstupu je ID, mohlo by se jednat o funkci
+        string funcNameStr;
+        strInit(&funcNameStr);
+        strCopyString(&funcNameStr, &(token->string));
+        funcName = funcNameStr.str;
+        strFree(&funcNameStr);
         check_function = 1;
+    }
 
     while (current_elem->elem_type != type_dollar || !is_delimiter(token))
     {
@@ -118,7 +126,7 @@ int psa(int *data_type)
         if (check_function && token->type == L_BRACKET) // Jedná se o funkci
         {
             check_function = 0;
-            retVal = func();
+            retVal = func(retParamCnt, paramCnt, funcName); 
             break;
         }
         else if (check_function && token->type != ID)

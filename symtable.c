@@ -14,14 +14,13 @@ void TSInit(TTree* tree) {
     tree->last = NULL; //TODO: Bude potřeba?
 }
 
-void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
+TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (*root == NULL) { // Volné másto pro vložený nového prvku
         TNode *tmp = (TNode*)malloc(sizeof(struct tNode));
         if (tmp == NULL) {
             print_err(ERR_COMPILER);
             exit(ERR_COMPILER);
         }
-
         tmp->key = malloc(strlen(key) + 1);
         strcpy(tmp->key, key);
         tmp->type = type;
@@ -33,6 +32,7 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
         tmp->rptr = NULL;
 
         *root = tmp;
+        return tmp;
     }
     else {
         int cmp = strcmp(key, *(&(*root)->key));
@@ -46,6 +46,7 @@ void TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param,
         else {
             //TODO: Co když narazím na prvek, který ve stromu již je?
         }
+        return NULL;
     }
 }
 
@@ -92,7 +93,7 @@ int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined) {
 
 void TSPrint(TNode* root) {
     if (root != NULL) {
-        //printf("--- Printing: %s\n", root->key);
+        printf("--- Printing: %s\n", root->key);
         TSPrint(root->lptr);
         TSPrint(root->rptr);
     }
@@ -182,8 +183,39 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
     }
 }
 
+//TODO: Zatím selže na vestavěných funkcích, které nemají vytvořené lokální tabulky funkcí
+void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* rParamCnt) {
+    TNode* funcNode = TSSearch(stackElem->node, key);
+
+    if (funcNode == NULL) { //Funkce zatím nebyla definována
+        TSInsert(&(stackElem->node), key, FUNC, false, param, localTS);
+        //TODO: Ještě uložit, že zatím neznáme počet návratových parametrů, anebo pak nějak přiřadit lParamCnt a porovnávat při definici funkce?
+    }
+    else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
+        if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) { 
+            print_err(ERR_SEM_FUNC);
+            exit(ERR_SEM_FUNC);
+        }
+        else {
+            *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
+            printf("----------- %i\n", *rParamCnt);
+        }
+    }
+}
+
+int TSCompare(TNode* firstNode, TNode* secondNode) {
+    if (firstNode != NULL && secondNode != NULL) {
+        if (firstNode->param == secondNode->param && firstNode->type == secondNode->type) {
+            return !(TSCompare(firstNode->lptr, secondNode->lptr) && TSCompare(firstNode->rptr, secondNode->rptr));
+        }
+        else return 1;
+    }
+    else return 0;
+}
+
 void TStackInit(TStack* stack) {
     stack->top = NULL;
+    stack->bottom = NULL;
 }
 
 void PushFrame(TStack* stack) {
@@ -207,17 +239,30 @@ void PopFrame(TStack* stack) {
     remove = NULL;
 }
 
-void addRetType(TNode* node, nodeType type) {
+void addRetType(RetType** retType, nodeType type) { 
+    if (*retType == NULL) {
+        RetType* tmp = malloc(sizeof(struct retType));
+        if (tmp == NULL) {
+            print_err(ERR_COMPILER);
+            exit(ERR_COMPILER);
+        }
+
+        tmp->type = type;
+        tmp->next = NULL;
+
+        *retType = tmp;
+    }
+    else {
+        addRetType(&(*retType)->next, type);
+    }
+}
+
+int countRetTypes(TNode* node) { //Nepočítá správně, protože se nevkládají retTypes správně
+    int cnt = 0;
     RetType* tmp = node->retTypes;
     while (tmp != NULL) {
         tmp = tmp->next;
+        cnt = cnt + 1;
     }
-
-    RetType* retType = malloc(sizeof(struct retType));
-    if (retType == NULL) {
-        print_err(ERR_COMPILER);
-        exit(ERR_COMPILER);
-    }
-    retType->next = NULL;
-    retType->type = type;
+    return cnt;
 }
