@@ -116,7 +116,11 @@ int getNextToken(){
             break;
 
             case ZERO_STATE:
-                if (c == '.') {
+                if (c == '0') {
+                    strFree(&s);
+                    return ERR_LEXICAL;
+                }
+                else if (c == '.') {
                     c_prev = c;
                     strAddChar(&s, c);
                     state = FLOAT_STATE;
@@ -207,10 +211,10 @@ int getNextToken(){
             case COMMENT_STATE: //k1
                 if(c == '/'){   
                     state = ONE_LINE_C_STATE;
-                    }     
+                }     
                 else if (c == '*'){ //k3
-                    state = M_LINE_C_STATE;            
-                    }
+                    state = M_LINE_C_STATE;
+                }
                 else {
                     token->type = DIV;
                     ungetc(c,sourceCode);
@@ -291,6 +295,18 @@ int getNextToken(){
                 else if (c == '\\') {
                     state = ESCAPE_STATE;
                 }
+                else if (c == '#') {
+                    strAddChar(&s, '\\');
+                    strAddChar(&s, '0');
+                    strAddChar(&s, '3');
+                    strAddChar(&s, '5');
+                }
+                else if (c == ' ') {
+                    strAddChar(&s, '\\');
+                    strAddChar(&s, '0');
+                    strAddChar(&s, '3');
+                    strAddChar(&s, '2');
+                }
                 else if (c == '\n' || c == EOF) {
                     strFree(&s);
                     return ERR_LEXICAL;
@@ -304,9 +320,9 @@ int getNextToken(){
                 state = STRING_STATE;
                 switch (c) {
                     case '"': strAddChar(&s, c); break;
-                    case '\\': strAddChar(&s, '\\'); break;
-                    case 'n': strAddChar(&s, '\n'); break;
-                    case 't': strAddChar(&s, '\t'); break;
+                    case '\\': strAddChar(&s, '\\'); strAddChar(&s, '0'); strAddChar(&s, '9'); strAddChar(&s, '2'); break;
+                    case 'n': strAddChar(&s, '\\'); strAddChar(&s, '0'); strAddChar(&s, '1'); strAddChar(&s, '0'); break;
+                    case 't': strAddChar(&s, '\\'); strAddChar(&s, '0'); strAddChar(&s, '0'); strAddChar(&s, '9'); break;
                     case 'x': state = HEX_ESCAPE_STATE; break;
                     default:
                         strFree(&s);
@@ -328,8 +344,19 @@ int getNextToken(){
             case HEX_ESCAPE_STATE_2:
                 if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
                     char hex[3] = { c_prev, c, '\0' };
-                    char c_new = (char)strtol(hex, NULL, 16);
-                    strAddChar(&s, c_new);
+                    int number = (int)strtol(hex, NULL, 16);
+                    char c_new[4];
+                    snprintf(c_new, 4, "%d", number);
+                    strAddChar(&s, '\\');
+                    if (number < 10) {
+                        strAddChar(&s, '0'); strAddChar(&s, '0'); strAddChar(&s, c_new[0]);
+                    }
+                    else if (number < 100) {
+                        strAddChar(&s, '0'); strAddChar(&s, c_new[0]); strAddChar(&s, c_new[1]);
+                    }
+                    else {
+                        strAddChar(&s, c_new[0]); strAddChar(&s, c_new[1]); strAddChar(&s, c_new[2]);
+                    }
                     state = STRING_STATE;
                 }
                 else {
