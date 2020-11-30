@@ -5,8 +5,6 @@
 
 #include "psa.h"
 
-char* funcName;
-
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -27,6 +25,9 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt)
     PSA_Stack stack;
     stack_init(&stack);
 
+    string funcName;
+    strInit(&funcName);
+
     int check_function = 0;
 
     // Do zásobníku se vloží $ pro označení dna zásobníku
@@ -39,11 +40,7 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt)
         return -1;
     }
     else if (token->type == ID) { // Na vstupu je ID, mohlo by se jednat o funkci
-        string funcNameStr;
-        strInit(&funcNameStr);
-        strCopyString(&funcNameStr, &(token->string));
-        funcName = funcNameStr.str;
-        strFree(&funcNameStr);
+        strCopyString(&funcName, &(token->string));
         check_function = 1;
     }
 
@@ -126,7 +123,7 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt)
         if (check_function && token->type == L_BRACKET) // Jedná se o funkci
         {
             check_function = 0;
-            retVal = func(retParamCnt, paramCnt, funcName); 
+            retVal = func(retParamCnt, paramCnt, funcName.str);
             break;
         }
         else if (check_function && token->type != ID)
@@ -139,6 +136,7 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt)
         *data_type = stack_top(&stack)->node_type;
 
     stack_free(&stack);
+    strFree(&funcName);
     return retVal;
 }
 
