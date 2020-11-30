@@ -6,6 +6,7 @@
 #include "parser.h"
 
 TTree* symTable;
+int returnedSth;
 
 Token* getToken() { 
     int retVal = getNextToken();
@@ -49,11 +50,11 @@ int parse(FILE* file) {
 void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně v tabulkce symbolů bude
     TStack_Elem* stackBottom = malloc(sizeof(struct tStack_elem));
     stack.bottom = stackBottom;
-    stack.bottom->node = TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL);
+    stack.bottom->node = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
+    
+    //addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
     TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL);
     TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL);
-
-    TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
 
     TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL); //TODO: Jak bude pobíhat kontrola datových typů vestavěných funkcí
     TSInsert(&(stack.top->node), "float2int", FUNC, true, 1, NULL);
@@ -156,12 +157,14 @@ int def_func() {
                 if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
                     PushFrame(&stack); //Začátek těla funkce
                     getNonEolToken();
-                    retVal = body();
+                    returnedSth = 0;
+                    retVal = body(&returnedSth);
 
                     if (retVal != SUCCESS) return retVal;
 
                     if (token->type == RC_BRACKET) {
                         PopFrame(&stack); //Konec těla funkce
+                        if (countRetTypes(currentFuncNode) != 0 && returnedSth != 1) return ERR_SEM_FUNC;
                         getToken();
                         retVal = SUCCESS;
                     }
@@ -282,6 +285,7 @@ int body() { //DONE ^^
     int retVal = SUCCESS;
 
     if (token->type == KEYWORD && strCmpConstStr(&(token->string), "return") == 0) { //<body> → <return> <body>
+        returnedSth = 1;
         getToken();
         retVal = return_f();
         if (retVal != SUCCESS) return retVal;
@@ -341,6 +345,7 @@ int return_f() { //DONE ^^
         if (token->type == EOL_T) {
             getNonEolToken();
             printf("RETURN_F: %i\n", 0);
+            if (rParamCnt != countRetTypes(currentFuncNode)) return ERR_SEM_FUNC;
             return SUCCESS;
         }
         else return ERR_SYNTAX; 
@@ -372,7 +377,7 @@ int if_f() {
         PushFrame(&stack); //Začátek těla if
         getNonEolToken();
         retVal = body();
-        if (retVal != SUCCESS) return SUCCESS;;
+        if (retVal != SUCCESS) return retVal;
 
         if (token->type != RC_BRACKET) return ERR_SYNTAX;
         getToken();

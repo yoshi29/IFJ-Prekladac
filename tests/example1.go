@@ -1,6 +1,10 @@
 // Program 2: Vypocet faktorialu (rekurzivne)
 package main
 
+func test(n int) (int, int) {
+    return 1, 1
+}
+
 func factorial(n int) (int) {
   dec_n := n - 1
   a := n

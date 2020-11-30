@@ -9,6 +9,7 @@
 #include "stdlib.h"
 #include "stdbool.h"
 #include "string.h"
+#include "stdarg.h"
 
 #include "error.h"
 #include "str.h"
@@ -199,5 +200,7 @@ void PopFrame(TStack* stack);
 void TSPrint(TNode* root);
 
 void addRetType(RetType** retType, nodeType type);
+
+void addMultipleRetType(RetType** retType, int num, ...);
 
 int countRetTypes(TNode* node);

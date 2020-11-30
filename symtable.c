@@ -28,6 +28,7 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
         tmp->localTS = localTS;
         tmp->param = param;
 
+        tmp->retTypes = NULL;
         tmp->lptr = NULL;
         tmp->rptr = NULL;
 
@@ -239,9 +240,20 @@ void PopFrame(TStack* stack) {
     remove = NULL;
 }
 
+void addMultipleRetType(RetType** retType, int num,...) {
+    va_list args;
+    va_start(args, num);
+    for (int i = 0; i < num; i++) {
+        nodeType type = va_arg(args, int);
+        addRetType(retType, type);
+    }
+    va_end(args);
+}
+
 void addRetType(RetType** retType, nodeType type) { 
     if (*retType == NULL) {
         RetType* tmp = malloc(sizeof(struct retType));
+
         if (tmp == NULL) {
             print_err(ERR_COMPILER);
             exit(ERR_COMPILER);
