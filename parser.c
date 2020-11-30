@@ -52,8 +52,7 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     stack.bottom = stackBottom;
     stack.bottom->node = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
     
-    //addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
-    TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
     TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL);
 
     TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL); //TODO: Jak bude pobíhat kontrola datových typů vestavěných funkcí
@@ -63,6 +62,16 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL);
     TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL);
     TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL);
+    /*
+    addMultipleRetType(&TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL)->retTypes, 2, INT, INT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL)->retTypes, 2, FLOAT, INT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL)->retTypes, 1, FLOAT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL)->retTypes, 1, FLOAT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL)->retTypes, 1, INT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL)->retTypes, 2, STRING, INT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL)->retTypes, 2, INT, INT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);   
+    */
 }
 
 void checkFunctionDefinition() { //TODO: Možná ještě bude potřeba otestovat, až se budou do tabulky symbolů na nejvyšší úroveň přidávat volané funkce
@@ -102,6 +111,7 @@ int program() { //DONE ^^
             if (token->type == EOF_T) {
                 retVal = SUCCESS;
             }
+            else return ERR_SYNTAX;
     }
 
     //printf("PROGRAM: %i\n", retVal);
@@ -168,6 +178,7 @@ int def_func() {
                         getToken();
                         retVal = SUCCESS;
                     }
+                    else retVal = ERR_SYNTAX;
                 }
                 else retVal = ERR_SYNTAX;
             }
@@ -358,7 +369,7 @@ int return_f() { //DONE ^^
 
 int return_val(int* retParamCnt) { //TODO: Kontrola počtu návratových hodnot
     int data_type, paramCnt; 
-    int retVal = psa(&data_type, &paramCnt, retParamCnt); //Psa může zvýšit paramCnt
+    int retVal = psa(&data_type, &paramCnt, retParamCnt, false); //Psa může zvýšit paramCnt
     if (retVal != SUCCESS) return SUCCESS;
     *retParamCnt = *retParamCnt + 1; //TODO: Nebude tu někdy o 1 navíc, třeba kvůli návratovým hodnotám funkce?
 
@@ -370,7 +381,7 @@ int return_val(int* retParamCnt) { //TODO: Kontrola počtu návratových hodnot
 int if_f() {
     //Minulý token byl if
     int data_type, paramCnt, rParamCnt; //Zde nevyužito
-    int retVal = psa(&data_type, &paramCnt, &rParamCnt);
+    int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
@@ -397,7 +408,7 @@ int for_f() {
     if (token->type == SEMICOLON) {
         getToken();
         int data_type, paramCnt, rParamCnt;
-        retVal = psa(&data_type, &paramCnt, &rParamCnt);
+        retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         if (token->type == SEMICOLON) {
             getToken();
@@ -444,7 +455,7 @@ int def_var(char* idName) {
     if (token->type == DEF) {
         getToken();
         int data_type, paramCnt, rParamCnt;
-        retVal = psa(&data_type, &paramCnt, &rParamCnt);
+        retVal = psa(&data_type, &paramCnt, &rParamCnt, false);
         if (retVal == -1) retVal = ERR_SYNTAX;
         TSInsertOrExitOnDuplicity(&(stack.top->node), idName, data_type, true, 0, NULL);
     }
@@ -573,7 +584,7 @@ int assign_r(int* lParamCnt) {
     int data_type;
     int paramCnt = 0; //Začínají se počítat parametry pravé strany přiřazení
     int rParamCnt = 1; //Pokud by nebyla v psa načtena funkce, ale id, tak na pravé straně bude nyní 1 hodnota (id); pokud byla načtena funkce, rParamCnt bude přes psa změněno na počet návratových hodnot funkce
-    int retVal = psa(&data_type, &paramCnt, &rParamCnt);
+    int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     retVal = ids_exprs_opt(&rParamCnt); //Počítání dalších možných ID na pravé straně přiřazení
@@ -590,7 +601,7 @@ int ids_exprs_opt(int* rParamCnt) {
     if (token->type == COMMA) {
         getToken();
         int data_type, paramCnt;
-        retVal = psa(&data_type, &paramCnt, rParamCnt);
+        retVal = psa(&data_type, &paramCnt, rParamCnt, false);
 
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         if (tmp == *rParamCnt) *rParamCnt = *rParamCnt + 1;

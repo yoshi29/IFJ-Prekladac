@@ -39,10 +39,10 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
         int cmp = strcmp(key, *(&(*root)->key));
 
         if (cmp < 0) { // Vkládání do levé větve
-            TSInsert(&(*root)->lptr, key, type, isDefined, param, localTS);
+            return TSInsert(&(*root)->lptr, key, type, isDefined, param, localTS);
         }
         else if (cmp > 0) { // Vkládání do pravé větve
-            TSInsert(&(*root)->rptr, key, type, isDefined, param, localTS);
+            return TSInsert(&(*root)->rptr, key, type, isDefined, param, localTS);
         }
         else {
             //TODO: Co když narazím na prvek, který ve stromu již je?
@@ -199,7 +199,7 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
         }
         else {
             *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
-            printf("----------- %i\n", *rParamCnt);
+            printf("-------- funcRetParamCnt %i\n", *rParamCnt);
         }
     }
 }

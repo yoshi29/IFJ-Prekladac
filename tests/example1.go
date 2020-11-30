@@ -1,8 +1,8 @@
 // Program 2: Vypocet faktorialu (rekurzivne)
 package main
-
+/*
 func test(n int) (int, int) {
-    return 1, 1
+    return 2, 2
 }
 
 func factorial(n int) (int) {
@@ -12,26 +12,12 @@ func factorial(n int) (int) {
     return 1
   } else {
     tmp := 0
-    tmp = factorial(dec_n)
+    tmp, dec_n = 2, factorial(dec_n)
         return n * tmp
   }
-}
-
+}*/
 
 func main() {
-  //print("Zadejte cislo pro vypocet faktorialu: ")
   a := 0
-  err := 0
-  //a, err = inputi()
-  if err == 0 {
-    if a < 0 {
-      //print("Faktorial nejde spocitat!", "\n") //Zatím vím, že nefunguje
-    } else {
-      //vysl := 0
-      //vysl = factorial(a)
-      //print("Vysledek je ", vysl, "\n")
-    }
-  } else {
-    //print("Chyba pri nacitani celeho cisla!\n")	
+  b := 0
   }
-}
