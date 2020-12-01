@@ -53,25 +53,14 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     stack.bottom->node = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
     
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
-    TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL);
-
-    TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL); //TODO: Jak bude pobíhat kontrola datových typů vestavěných funkcí
-    TSInsert(&(stack.top->node), "float2int", FUNC, true, 1, NULL);
-
-    TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL);
-    TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL);
-    TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL);
-    TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL);
-    /*
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL)->retTypes, 2, INT, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL)->retTypes, 2, FLOAT, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL)->retTypes, 1, FLOAT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL)->retTypes, 1, FLOAT);
+    addMultipleRetType(&TSInsert(&(stack.top->node), "float2int", FUNC, true, 1, NULL)->retTypes, 1, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL)->retTypes, 1, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL)->retTypes, 2, STRING, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL)->retTypes, 2, INT, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);   
-    */
+    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);    
 }
 
 void checkFunctionDefinition() { //TODO: Možná ještě bude potřeba otestovat, až se budou do tabulky symbolů na nejvyšší úroveň přidávat volané funkce
