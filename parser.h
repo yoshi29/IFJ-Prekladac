@@ -11,6 +11,7 @@
 #include "symtable.h"
 #include "scanner.h"
 #include "psa.h"
+#include "generator.h"
 
 
 /**

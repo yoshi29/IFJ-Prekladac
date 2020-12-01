@@ -1,0 +1,15 @@
+.IFJcode20
+JUMP $$main
+LABEL $foo
+PUSHFRAME
+DEFVAR LF@%retval1
+MOVE LF@%retval1 int@0
+DEFVAR LF@%retval2
+MOVE LF@%retval2 int@0
+POPFRAME
+RETURN
+LABEL $main
+PUSHFRAME
+POPFRAME
+RETURN
+>> PARSING: 0
