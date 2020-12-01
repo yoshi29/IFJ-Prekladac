@@ -36,7 +36,7 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
         return tmp;
     }
     else {
-        int cmp = strcmp(key, *(&(*root)->key));
+        int cmp = strcmp(key, (*root)->key);
 
         if (cmp < 0) { // Vkládání do levé větve
             return TSInsert(&(*root)->lptr, key, type, isDefined, param, localTS);
@@ -44,10 +44,13 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
         else if (cmp > 0) { // Vkládání do pravé větve
             return TSInsert(&(*root)->rptr, key, type, isDefined, param, localTS);
         }
-        else {
-            //TODO: Co když narazím na prvek, který ve stromu již je?
+        else { // Aktualizují se data
+            (*root)->type = type;
+            (*root)->isDefined = isDefined;
+            (*root)->localTS = localTS;
+            (*root)->param = param;
+            return (*root);
         }
-        return NULL;
     }
 }
 
