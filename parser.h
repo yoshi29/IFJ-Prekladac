@@ -209,9 +209,10 @@ int func(int* retParamCnt, int* paramCnt, char* funcName);
  * Pravidlo <params> → ε
  * Pravidlo <params> → id <params_o>
  * @param paramCnt Počítadlo parametrů funkce
- * @paral localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
+ * @param localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
+ * @param Jméno funkce, o jejíž parametry se jedná
  */
-int params(int* paramCnt, TNode** localTS);
+int params(int* paramCnt, TNode** localTS, char* funcName);
 
 /**
  * Nepovinné další identifikátory
@@ -219,8 +220,9 @@ int params(int* paramCnt, TNode** localTS);
  * Pravidlo <params_o> → , id <params_o>
  * @param paramCnt Počítadlo parametrů funkce
  * @paral localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
+ * @param Jméno funkce, o jejíž parametry se jedná
  */
-int params_opt(int* paramCnt, TNode** localTS);
+int params_opt(int* paramCnt, TNode** localTS, char* funcName);
 
 /**
  * Pravá strana přiřazení

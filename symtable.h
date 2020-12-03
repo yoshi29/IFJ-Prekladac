@@ -95,6 +95,21 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
 TNode* TSSearch(TNode* root, char* key);
 
 /**
+ * Vyhledá prvek v lokální tabulce symbolů funkce daného jména dle pozice parametru
+ * @param root Ukazatel na kořen stromu
+ * @param funcName Jméno vyhledávané funkce
+ * @param paramPos Vyhledávaná hodnota
+ */
+TNode* TSSearchByNameAndParam(TNode* root, char* funcName, int paramPos);
+
+/**
+ * Rekurzivně vyhledá prvek dle počtu parametrů, nebo pozice parametru, pokud je předána lokální tabulka funkce
+ * @param root Ukazatel na kořen stromu
+ * @param paramPos Vyhledávaná hodnota
+ */
+TNode* TSSearchByParam(TNode* root, int paramPos);
+
+/**
  * Hledá klíč v rámci celého zásobníku a vrací ukazatel na prvek s hledaným klíčem
  * @param stackElem Prvek zásobníku
  * @param key Hledaný klíč

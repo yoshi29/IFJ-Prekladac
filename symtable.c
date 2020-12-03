@@ -70,6 +70,23 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
+TNode* TSSearchByNameAndParam(TNode* root, char* funcName, int paramPos) {
+    TNode* node = TSSearch(root, funcName);
+    if (node == NULL) return NULL;
+    return TSSearchByParam(node->localTS, paramPos);
+}
+
+TNode* TSSearchByParam(TNode* root, int paramPos) {
+    if (root == NULL) return NULL;
+
+    if (root->param != paramPos) {
+        TNode* tmp = TSSearchByParam(root->lptr, paramPos);
+        if (tmp == NULL) return TSSearchByParam(root->rptr, paramPos);
+        else return tmp;
+    }
+    else return root;
+}
+
 TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key, int* scope) {
     TNode* node;
     if (stackElem != NULL) {
@@ -190,7 +207,6 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
     }
 }
 
-//TODO: Zatím selže na vestavěných funkcích, které nemají vytvořené lokální tabulky funkcí
 void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* rParamCnt) {
     TNode* funcNode = TSSearch(stackElem->node, key);
 
@@ -200,20 +216,23 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
     }
     else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
         if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) { 
+            //printf("--- ERR_SEMFUNC: funcNode->para: %i, param: %i\n", funcNode->param, param);
             print_err(ERR_SEM_FUNC);
             exit(ERR_SEM_FUNC);
         }
         else {
             *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
-            printf("-------- funcRetParamCnt %i\n", *rParamCnt);
+            //printf("-------- funcRetParamCnt %i\n", *rParamCnt);
         }
     }
 }
 
 int TSCompare(TNode* firstNode, TNode* secondNode) {
     if (firstNode != NULL && secondNode != NULL) {
+        //printf("1) %s: par: %i, type: %i | 2) %s: par: %i, type: %i\n", firstNode->key, firstNode->param, firstNode->type, secondNode->key, secondNode->param, secondNode->type);
+   
         if (firstNode->param == secondNode->param && firstNode->type == secondNode->type) {
-            return !(TSCompare(firstNode->lptr, secondNode->lptr) && TSCompare(firstNode->rptr, secondNode->rptr));
+            return TSCompare(firstNode->lptr, secondNode->lptr) || TSCompare(firstNode->rptr, secondNode->rptr);
         }
         else return 1;
     }
@@ -276,7 +295,7 @@ void addRetType(RetType** retType, nodeType type) {
     }
 }
 
-int countRetTypes(TNode* node) { //Nepočítá správně, protože se nevkládají retTypes správně
+int countRetTypes(TNode* node) {
     int cnt = 0;
     RetType* tmp = node->retTypes;
     while (tmp != NULL) {

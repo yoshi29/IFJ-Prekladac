@@ -519,11 +519,16 @@ int func(int* retParamCnt, int* paramCnt, char* funcName) { //DONE ^^
 
     if (token->type == L_BRACKET) {
         getNonEolToken(); //za závorkou možný EOL
-        retVal = params(paramCnt, &localTS);
+        generateBeforeParamPass();
+        retVal = params(paramCnt, &localTS, funcName);
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
 
         //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
         TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt); //bude-li už definovaná, kontrola typů/pořadí/počtu parametrů - (pokud bude sedět, přepis klíčů na reálně použité?; 
+        generateFuncCall(funcName); //-- Generování volání funkce
+        for (int i = 1; i <= *paramCnt; i++) {
+            generateVarFromParam(i); //Postupné generování proměnných s předanými hodnotami
+        }
         getNextToken();
     }
 
@@ -531,7 +536,7 @@ int func(int* retParamCnt, int* paramCnt, char* funcName) { //DONE ^^
     return retVal;
 }
 
-int params(int *paramCnt, TNode** localTS) {
+int params(int *paramCnt, TNode** localTS, char* funcName) {
     int retVal = SUCCESS;
 
     if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
@@ -540,18 +545,22 @@ int params(int *paramCnt, TNode** localTS) {
             //TODO: Insert s tím, že se na stacku vyhledá datový typ ID
         }
         else {
-            TSInsert(localTS, "", nodeTypeFromTokenType(token->type), true, *paramCnt, NULL); //TODO: Jméno parametru funkce není důležité, ale nebude zde vadit ""?
+            TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt); //TODO: Pokud je NULL, funkce ještě nebyla definována
+            if (paramNode != NULL) {
+                //printf("----------- paramNode->key: %s", paramNode->key);
+                TSInsert(localTS, paramNode->key, nodeTypeFromTokenType(token->type), true, *paramCnt, NULL);
+            }
         }
-        generateParam(*paramCnt); //-- Generování proměnné pro parametr funkce
         *paramCnt = *paramCnt + 1; //Načten další parametr funkce
+        generateParamPass(*paramCnt, token); //-- Generování proměnné v dočasném rámci
         getToken();
-        retVal = params_opt(paramCnt, localTS);
+        retVal = params_opt(paramCnt, localTS, funcName);
     }
 
     return retVal;
 }
 
-int params_opt(int* paramCnt, TNode** localTS) { //TODO: Možná se ještě podívat na opt EOL
+int params_opt(int* paramCnt, TNode** localTS, char* funcName) {
     int retVal = SUCCESS;
 
     if (token->type == COMMA) {
@@ -559,15 +568,18 @@ int params_opt(int* paramCnt, TNode** localTS) { //TODO: Možná se ještě pod�
         if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
             if (token->type == ID) {
                 TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
-                *paramCnt = *paramCnt + 1;
-                if (token->type == ID) { //TODO: Nutné vyhledat datový typ ID
-                }
-                else {
-                    TSInsert(localTS, "", nodeTypeFromTokenType(token->type), true, *paramCnt, NULL); //TODO: Jméno parametru funkce není důležité, ale nebude zde vadit ""?
+                //TODO: Nutné vyhledat datový typ ID
+            }
+            else {
+                TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt); //TODO: Pokud je NULL, funkce ještě nebyla definována
+                if (paramNode != NULL) {
+                    TSInsert(localTS, paramNode->key, nodeTypeFromTokenType(token->type), true, *paramCnt, NULL);
                 }
             }
+            *paramCnt = *paramCnt + 1;
+            generateParamPass(*paramCnt, token); //-- Generování proměnné v dočasném rámci
             getToken();
-            retVal = params_opt(paramCnt, localTS);
+            retVal = params_opt(paramCnt, localTS, funcName);
         }
     }
 
@@ -583,7 +595,7 @@ int assign_r(int* lParamCnt) {
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
     retVal = ids_exprs_opt(&rParamCnt); //Počítání dalších možných ID na pravé straně přiřazení
-    //printf("--- lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
+    //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
     if (retVal != SUCCESS) return retVal;
     if (*lParamCnt != rParamCnt) return ERR_SEM_FUNC;
     return retVal;

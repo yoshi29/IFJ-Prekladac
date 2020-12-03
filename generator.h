@@ -5,8 +5,7 @@
 #include "stdarg.h"
 
 #include "scanner.h"
-
-#define MAX 40 //TODO: Kolik by mìlo být skuteènì? +pøejmenovat
+#include "symtable.h"
 
 /*
  * Vrací velikost potøebnou k alokaci øetìzce
@@ -50,7 +49,25 @@ void generateFuncEnd();
 void generateRetVal(int retValPos, tokenType type);
 
 /*
- * Vygeneruje promìnnou pro parametr funkce
+ * Vygeneruje promìnnou, do které se uloží pøedaný parametr funkce
  * @param retValPos Poøadí parametru
  */
-void generateParam(int paramPos);
+void generateVarFromParam(int paramPos);
+
+/*
+ * Vygeneruje promìnnou s parametrem funkce v doèasném rámci
+ * @param retValPos Poøadí parametru
+ * @param token Token s parametrem
+ */
+void generateParamPass(int paramPos, Token* token);
+
+/*
+ * Vygeneruje volání funkce
+ * @param funcName Jméno funkce
+ */
+void generateFuncCall(char* funcName);
+
+/*
+ * Generuje CREATEFRAME
+ */
+void generateBeforeParamPass();
