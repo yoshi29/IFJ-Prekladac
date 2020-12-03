@@ -1,3 +1,8 @@
+/**
+ * Projekt: Implementace překladače imperativního jazyka IFJ20
+ * Autor: Jana Stopková, xstopk01
+ */
+
 #include "generator.h"
 
 int getStrSize(int num) {
@@ -30,13 +35,21 @@ void generateHeader() {
 }
 
 void generateFuncStart(char* funcName) {
-	printCode(4, "LABEL $", funcName, " # ---------- Start of function ", funcName);
+	if (strcmp(funcName, "main") == 0) {
+		printCode(4, "LABEL $$", funcName, " # ---------- Start of function ", funcName);
+		printInstr("CREATEFRAME");
+	}
+	else 
+		printCode(4, "LABEL $", funcName, " # ---------- Start of function ", funcName);
+
 	printInstr("PUSHFRAME");
 }
 
-void generateFuncEnd() {
-	printCode(2, "POPFRAME", " # ---------- End of function");
-	printInstr("RETURN");
+void generateFuncEnd(char* funcName) {
+	if (strcmp(funcName, "main") != 0) {
+		printCode(2, "POPFRAME", " # ---------- End of function");
+		printInstr("RETURN");
+	}
 }
 
 void generateRetVal(int retValPos, tokenType type) {
@@ -56,7 +69,7 @@ void generateRetVal(int retValPos, tokenType type) {
 			printCode(4, "MOVE LF@%retval", pos, " ", "string@");
 			break;
 		default:
-			//TODO: Jak� chyba?
+			//TODO: Jaká chyba?
 			break;
 	}
 }
@@ -69,6 +82,10 @@ void generateVarFromParam(int paramPos) {
 	printCode(5, "MOVE LF@%param", pos, " ", "LF@%", pos);
 }
 
+void generateBeforeParamPass() {
+	printCode(2, "CREATEFRAME", " # ---------- Passing params to function");
+}
+
 void generateParamPass(int paramPos, Token* token) {
 	char pos[getStrSize(paramPos)];
 	sprintf(pos, "%i", paramPos);
@@ -77,7 +94,7 @@ void generateParamPass(int paramPos, Token* token) {
 	if (token->type == FLOAT_T) {
 		char floatStr[getStrSize(token->floatNumber)];
 		sprintf(floatStr, "%a", token->floatNumber);
-		printCode(5, "MOVE TF@%", pos, " ", "float@", floatStr); //TODO: Vy�e�it konverze na char*
+		printCode(5, "MOVE TF@%", pos, " ", "float@", floatStr); //TODO: Vyřešit konverze na char*
 	}
 	else if (token->type == INT_T) {
 		char intStr[getStrSize(token->intNumber)];
@@ -95,17 +112,25 @@ void generateParamPass(int paramPos, Token* token) {
 		printCode(6, "MOVE TF@%", pos, " ", "LF@%", idNode->key, scopeStr);
 	}
 	else {
-		//TODO: Jak� chyba?
+		//TODO: Jaká chyba?
 	}
 }
 
 void generateFuncCall(char* funcName) {
 	if (strcmp(funcName, "main") == 0)
 		printCode(4, "CALL $$", funcName, " # ---------- Calling function ", funcName);
+	else 
+		printCode(4, "CALL $", funcName, " # ---------- Calling function ", funcName);
 
-	printCode(4, "CALL $", funcName, " # ---------- Calling function ", funcName);
+
 }
 
-void generateBeforeParamPass() {
-	printCode(2, "CREATEFRAME", " # ---------- Passing params to function");
+void generateVariable(char* name, int suffix, int valueSuffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+	char valueSuffixStr[getStrSize(valueSuffix)];
+	sprintf(valueSuffixStr, "%i", valueSuffix);
+
+	printCode(3, "DEFVAR LF@%", name, suffixStr);
+	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
 }

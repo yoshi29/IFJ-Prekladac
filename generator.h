@@ -1,3 +1,8 @@
+/**
+ * Projekt: Implementace pÅ™ekladaÄe imperativnÃ­ho jazyka IFJ20
+ * Autor: Jana StopkovÃ¡, xstopk01
+ */
+
 #pragma once
 #include "stdio.h"
 #include "stdlib.h"
@@ -6,68 +11,78 @@
 
 #include "scanner.h"
 #include "symtable.h"
+#include "psa.h"
 
 /*
- * Vrací velikost potøebnou k alokaci øetìzce
- * @param num Èíslo urèené k pøevodu na øetìzec
+ * VracÃ­ velikost potÅ™ebnou k alokaci Å™etÄ›zce
+ * @param num ÄŒÃ­slo urÄenÃ© k pÅ™evodu na Å™etÄ›zec
  */
 int getStrSize(int num);
 
 /*
- * Postupnì vypisuje èásti instrukce a vıpis zakonèí znakem konce øádku
- * @param num Poèet pøedanıch parametrù
+ * PostupnÄ› vypisuje ÄÃ¡sti instrukce a vÃ½pis zakonÄÃ­ znakem konce Å™Ã¡dku
+ * @param num PoÄet pÅ™edanÃ½ch parametrÅ¯
  */
 void printCode(int num, ...);
 
 /*
- * Vypíše zadanou instrukci
+ * VypÃ­Å¡e zadanou instrukci
  * @param instruction Instrukce
  */
 void printInstr(char* instruction);
 
 /*
- * Vygeneruje hlavièku
+ * Vygeneruje hlaviÄku
  */
 void generateHeader();
 
 /*
- * Vygeneruje zaèátek funkce
- * @param funcName Jméno funkce
+ * Vygeneruje zaÄÃ¡tek funkce
+ * @param funcName JmÃ©no funkce
  */
 void generateFuncStart(char* funcName);
 
 /*
  * Vygeneruje konec funkce
+ * @param funcName JmÃ©no funkce
  */
-void generateFuncEnd();
+void generateFuncEnd(char* funcName);
 
 /*
- * Vygeneruje definice návratovıch promìnnıch
- * @param retValPos Poøadí návratové hodnoty
- * @param type Typ tokenu (mono pøijmout pouze DATA_TYPE_FLOAT/DATA_TYPE_INT/DATA_TYPE_STRING)
+ * Vygeneruje definice nÃ¡vratovÃ½ch promÄ›nnÃ½ch
+ * @param retValPos PoÅ™adÃ­ nÃ¡vratovÃ© hodnoty
+ * @param type Typ tokenu (moÅ¾no pÅ™ijmout pouze DATA_TYPE_FLOAT/DATA_TYPE_INT/DATA_TYPE_STRING)
  */
 void generateRetVal(int retValPos, tokenType type);
 
 /*
- * Vygeneruje promìnnou, do které se uloí pøedanı parametr funkce
- * @param retValPos Poøadí parametru
+ * Vygeneruje promÄ›nnou, do kterÃ© se uloÅ¾Ã­ pÅ™edanÃ½ parametr funkce
+ * @param retValPos PoÅ™adÃ­ parametru
  */
 void generateVarFromParam(int paramPos);
 
 /*
- * Vygeneruje promìnnou s parametrem funkce v doèasném rámci
- * @param retValPos Poøadí parametru
+ * Vygeneruje promÄ›nnou s parametrem funkce v doÄasnÃ©m rÃ¡mci
+ * @param retValPos PoÅ™adÃ­ parametru
  * @param token Token s parametrem
  */
 void generateParamPass(int paramPos, Token* token);
 
 /*
- * Vygeneruje volání funkce
- * @param funcName Jméno funkce
+ * Vygeneruje volÃ¡nÃ­ funkce
+ * @param funcName JmÃ©no funkce
  */
 void generateFuncCall(char* funcName);
 
 /*
- * Generuje CREATEFRAME
+ * Vyeneruje CREATEFRAME
  */
 void generateBeforeParamPass();
+
+/*
+ * Vygeneruje definici promÄ›nnÃ©
+ * @param name NÃ¡zev promÄ›nnÃ©
+ * @param suffix ÄŒÃ­slo aktuÃ¡lnÃ­ho rÃ¡mce, budoucÃ­ suffix promÄ›nnÃ©
+ * @param valueSuffix
+ */
+void generateVariable(char* name, int suffix, int valueSuffix);

@@ -164,7 +164,7 @@ int def_func() {
                     if (retVal != SUCCESS) return retVal;
 
                     if (token->type == RC_BRACKET) {
-                        generateFuncEnd();
+                        generateFuncEnd(currentFuncNode->key);
                         PopFrame(&stack); //Konec těla funkce
                         if (countRetTypes(currentFuncNode) != 0 && returnedSth != 1) return ERR_SEM_FUNC;
                         getToken();
@@ -191,13 +191,13 @@ int formal_params(int *paramCount, TNode** localTS, int isMain) { //DONE ^^
         string paramName;
         strInit(&paramName);
         strCopyString(&paramName, &(token->string));
-
         getToken();
         if (token->type == DATA_TYPE_INT || token->type == DATA_TYPE_FLOAT || token->type == DATA_TYPE_STRING) {
             TSInsertOrExitOnDuplicity(localTS, paramName.str, nodeTypeFromTokenType(token->type), true, *paramCount, NULL);
             (*paramCount)++;
 
             getToken();
+            generateVarFromParam(*paramCount); //-- Vygenerování proměnné, do které bude načtena předaná hodnota
             retVal = formal_params_opt(paramCount, localTS);
         }
         else retVal = ERR_SYNTAX;
@@ -222,6 +222,7 @@ int formal_params_opt(int *paramCount, TNode** localTS) { //DONE ^^
                 (*paramCount)++;
 
                 getToken(); //Načte další token
+                generateVarFromParam(*paramCount); //-- Vygenerování proměnné, do které bude načtena předaná hodnota
                 retVal = formal_params_opt(paramCount, localTS);
             }
             else retVal = ERR_SYNTAX;
@@ -452,6 +453,8 @@ int def_var(char* idName) {
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false);
         if (retVal == -1) retVal = ERR_SYNTAX;
         TSInsertOrExitOnDuplicity(&(stack.top->node), idName, data_type, true, 0, NULL);
+
+        generateVariable(idName, stack.top->scope, psa_var_cnt); //-- Vygenerování definice proměnné
     }
 
     return retVal;
@@ -526,9 +529,6 @@ int func(int* retParamCnt, int* paramCnt, char* funcName) { //DONE ^^
         //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
         TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt); //bude-li už definovaná, kontrola typů/pořadí/počtu parametrů - (pokud bude sedět, přepis klíčů na reálně použité?; 
         generateFuncCall(funcName); //-- Generování volání funkce
-        for (int i = 1; i <= *paramCnt; i++) {
-            generateVarFromParam(i); //Postupné generování proměnných s předanými hodnotami
-        }
         getNextToken();
     }
 
