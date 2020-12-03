@@ -9,6 +9,12 @@
 #define MAX 40 //TODO: Kolik by mìlo být skuteènì? +pøejmenovat
 
 /*
+ * Vrací velikost potøebnou k alokaci øetìzce
+ * @param num Èíslo urèené k pøevodu na øetìzec
+ */
+int getStrSize(int num);
+
+/*
  * Postupnì vypisuje èásti instrukce a výpis zakonèí znakem konce øádku
  * @param num Poèet pøedaných parametrù
  */

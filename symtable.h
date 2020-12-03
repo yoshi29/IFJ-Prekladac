@@ -24,7 +24,8 @@ typedef enum {
     /*0*/ INT,
     /*1*/ FLOAT,
     /*2*/ STRING,
-    /*3*/ FUNC
+    /*3*/ FUNC,
+    /*4*/ BOOL
 } nodeType;
 
 /**
@@ -51,6 +52,7 @@ typedef struct tTree {
  * Prvek zásobníku tabulek symbolů
  */
 typedef struct tStack_elem {
+    int scope;
     struct tNode* node;
     struct tStack_elem* next;
 } TStack_Elem;
@@ -96,9 +98,10 @@ TNode* TSSearch(TNode* root, char* key);
  * Hledá klíč v rámci celého zásobníku a vrací ukazatel na prvek s hledaným klíčem
  * @param stackElem Prvek zásobníku
  * @param key Hledaný klíč
+ * @param scope Adresa čísla, kam se má uložit číslo rámce hledaného prvku
  * @return Ukazatel na prvek s daným klíčem, pokud takový prvek neexistuje, vrací NULL
  */
-TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key);
+TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key, int* scope);
 
 /**
  * Projde tabulku symbolů a kontroluje, zda splňuje podmínky

@@ -8,6 +8,7 @@
 
 TStack stack;
 TNode* currentFuncNode = NULL;
+int scopeCnt = 0;
 
 void TSInit(TTree* tree) {
     tree->root = NULL;
@@ -69,11 +70,13 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
-TNode *TSSearchStackAndReturn(TStack_Elem *stackElem, char *key) {
-    TNode *node;
+TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key, int* scope) {
+    TNode* node;
     if (stackElem != NULL) {
         if ((node = TSSearch(stackElem->node, key)) == NULL)
-            node = TSSearchStackAndReturn(stackElem->next, key);
+            node = TSSearchStackAndReturn(stackElem->next, key, scope);
+        else
+            *scope = stackElem->scope; // Prvek byl nazelen, uložíme číslo rámce
 
         return node;
     }
@@ -228,13 +231,14 @@ void PushFrame(TStack* stack) {
         print_err(ERR_COMPILER);
         exit(ERR_COMPILER);
     }
-
+    newStackTop->scope = scopeCnt++;
     newStackTop->next = stack->top;
     newStackTop->node = NULL;
     stack->top = newStackTop;
 }
 
 void PopFrame(TStack* stack) {
+    scopeCnt--;
     TStack_Elem* remove = stack->top;
     stack->top = stack->top->next;
     if (remove->node != NULL)

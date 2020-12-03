@@ -1,5 +1,14 @@
 #include "generator.h"
 
+int getStrSize(int num) {
+	int size = 2;
+	while (num > 9) {
+		size++;
+		num /= 10;
+	}
+	return size;
+}
+
 void printCode(int num, ...) {
 	va_list args;
 	va_start(args, num);
@@ -31,7 +40,7 @@ void generateFuncEnd() {
 }
 
 void generateRetVal(int retValPos, tokenType type) {
-	char pos[MAX];
+	char pos[getStrSize(retValPos)];
 	sprintf(pos, "%i", retValPos);
 
 	printCode(2, "DEFVAR LF@%retval", pos);
@@ -53,7 +62,7 @@ void generateRetVal(int retValPos, tokenType type) {
 }
 
 void generateParam(int paramPos) {
-	char pos[MAX];
+	char pos[getStrSize(paramPos)];
 	sprintf(pos, "%i", paramPos);
 
 	printCode(2, "DEFVAR LF@%param", pos);
