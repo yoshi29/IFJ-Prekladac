@@ -13,8 +13,11 @@
 #include "scanner.h"
 #include "parser.h"
 #include "psa_stack.h"
+#include "generator.h"
 
 #define PSA_TABLE_SIZE 7
+
+extern int psa_var_cnt;
 
 typedef enum {
 	X,	//   (Error)

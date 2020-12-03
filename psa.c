@@ -5,6 +5,8 @@
 
 #include "psa.h"
 
+int psa_var_cnt = 0;
+
 static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
 {
     //  | r |+- |*/ | ( | ) | i | $ |
@@ -125,6 +127,7 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc)
             if (parseFunc == false) return ERR_SYNTAX;
             check_function = 0;
             retVal = func(retParamCnt, paramCnt, funcName.str);
+            // TODO: Generování kódu
             break;
         }
         else if (check_function && token->type != ID)
@@ -143,119 +146,330 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc)
 
 // Zatím pouze kontroluje sémantiku
 // Možná bude lepší sloučit s find_rule()
-// TODO: Generování kódu/stromu
 int reduce(PSA_Stack *s, int rule)
 {
     PSA_Stack_Elem *current = stack_top(s);
     TStack_Elem *sym_table = stack.top;
+
+    char var_num[getStrSize(psa_var_cnt)];
+
+    int size1 = 2;
+    int size2 = 2;
+
+    if (current != NULL)
+    {
+        size2 = getStrSize(current->var_count);
+        if (current->nextPtr != NULL && current->nextPtr->nextPtr != NULL)
+            size1 = getStrSize(current->nextPtr->nextPtr->var_count);
+    }
+    
+    char op1_num[size1];
+    char op2_num[size2];
 
     switch (rule)
     {
     case R_E_PLUS_E: // E -> E + E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+        if (current->node_type == BOOL)
+            return ERR_SEM_COMP;
+
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        if (current->node_type == INT || current->node_type == FLOAT)
+            printCode(6, "ADD LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
+        else
+            printCode(6, "CONCAT LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_MINUS_E: // E -> E - E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
-        if (current->node_type == STRING)
+        if (current->node_type == STRING || current->node_type == BOOL)
             return ERR_SEM_COMP;
+
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "SUB LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_MUL_E: // E -> E * E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
-        if (current->node_type == STRING)
+        if (current->node_type == STRING || current->node_type == BOOL)
             return ERR_SEM_COMP;
+        
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "MUL LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_DIV_E: // E -> E / E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
-        if (current->node_type == STRING)
+        if (current->node_type == STRING || current->node_type == BOOL)
             return ERR_SEM_COMP;
         if ((current->node_type == INT && current->intNumber == 0) || (current->node_type == FLOAT && current->floatNumber == 0.0))
             return ERR_DIVBYZERO;
 
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        if (current->node_type == INT)
+            printCode(6, "DIV LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        else
+            printCode(6, "IDIV LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_EQ_E: // E -> E == E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+        
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "EQ LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_NE_E: // E -> E != E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+        
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "EQ LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        printCode(4, "NOT LF@*E", var_num, " LF@*E", var_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_GT_E: // E -> E > E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+        
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "GT LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_LT_E: // E -> E < E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "LT LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_GE_E: // E -> E >= E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "GT LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        printCode(6, "EQ LF@*E", op1_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        printCode(6, "OR LF@*E", var_num, " LF@*E", var_num, " LF@*E", op1_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_E_LE_E: // E -> E <= E
         if (current->node_type != current->nextPtr->nextPtr->node_type)
             return ERR_SEM_COMP;
+        
+        // Vygeneruje se nová proměnná
+        psa_var_cnt++;
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
+        sprintf(op1_num, "%d", current->nextPtr->nextPtr->var_count);
+        sprintf(op2_num, "%d", current->var_count);
+
+        printCode(6, "LT LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        printCode(6, "EQ LF@*E", op1_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        printCode(6, "OR LF@*E", var_num, " LF@*E", var_num, " LF@*E", op1_num);
+
         stack_pop_n(s, 2);
-        elem_set_reduce(stack_top(s), 0);
+        current = stack_top(s);
+        elem_set_reduce(current, 0);
+        current->node_type = BOOL;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+
         return SUCCESS;
 
     case R_LBR_E_RBR: // E -> ( E )
         stack_pop(s);
-        current = stack_top(s);
-        PSA_Stack_Elem *new_elem = elem_create(current->elem_type, current->token_type, current->node_type, &(current->string), current->intNumber, current->floatNumber);
-        if (new_elem == NULL) return ERR_COMPILER;
-        stack_pop_n(s, 2);
-        stack_push(s, new_elem);
+        current = stack_top(s); // E
+        PSA_Stack_Elem *temp = current->nextPtr; // (
+        current->nextPtr = current->nextPtr->nextPtr;
+        elem_destroy(temp);
+        elem_set_reduce(current, 0);
         return SUCCESS;
 
     case R_I: // E -> i
         current->elem_type = type_nonterm;
         elem_set_reduce(current, 0);
 
+        // Generování
+        psa_var_cnt++;
+        current->var_count = psa_var_cnt; // Uloží se číslo proměnné
+        sprintf(var_num, "%d", psa_var_cnt);
+        printCode(2, "DEFVAR LF@*E", var_num);
+
         if (current->token_type == ID)
         {
-            TNode *node = TSSearchStackAndReturn(sym_table, current->string.str);
+            int scope;
+            TNode *node = TSSearchStackAndReturn(sym_table, current->string.str, &scope);
             if (node == NULL || node->type == FUNC)
                 return ERR_SEM_DEF;
             if (node->isDefined == false)
                 return ERR_SEM_DEF;
 
             current->node_type = node->type;
+            
+            if (node->param != 0) // Jedná se o parametr fukce
+            {
+                char param_num[getStrSize(node->param)];
+                sprintf(param_num, "%d", node->param);
+                printCode(4, "MOVE LF@*E", var_num, " LF@%param", param_num);
+            }
+            else
+            {
+                char id_num[getStrSize(scope)];
+                sprintf(id_num, "%d", scope);
+                printCode(5, "MOVE LF@*E", var_num, " LF@", current->string.str, id_num);
+            }
         }
-        else if (current->token_type == INT_T) current->node_type = INT;
-        else if (current->token_type == FLOAT_T) current->node_type = FLOAT;
-        else if (current->token_type == STRING_T) current->node_type = STRING;
+        else if (current->token_type == INT_T)
+        {
+            current->node_type = INT;
+
+            char int_num[getStrSize(current->intNumber)];
+            sprintf(int_num, "%ld", current->intNumber);
+            printCode(4, "MOVE LF@*E", var_num, " int@", int_num);
+        }
+        else if (current->token_type == FLOAT_T)
+        {
+            current->node_type = FLOAT;
+
+            char fl_num[30];
+            sprintf(fl_num, "%a", current->floatNumber);
+            printCode(4, "MOVE LF@*E", var_num, " float@", fl_num);
+        }
+        else if (current->token_type == STRING_T)
+        {
+            current->node_type = STRING;
+            printCode(4, "MOVE LF@*E", var_num, " string@", current->string.str);
+        }
         else return ERR_COMPILER;
 
         return SUCCESS;

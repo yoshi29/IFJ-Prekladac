@@ -30,6 +30,7 @@ typedef struct t_psa_stack_elem {
     double floatNumber;
 
     int reduce; // příznak pro redukci
+    int var_count;
     
     struct t_psa_stack_elem *nextPtr;
 } PSA_Stack_Elem;

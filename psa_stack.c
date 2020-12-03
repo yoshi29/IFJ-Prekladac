@@ -20,6 +20,7 @@ PSA_Stack_Elem *elem_create(PSA_Data_Type elem_type, tokenType token_type, nodeT
         strCopyString(&(new_elem->string), string);
 
     new_elem->reduce = 0;
+    new_elem->var_count = -1;
     new_elem->nextPtr = NULL;
 
     return new_elem;
