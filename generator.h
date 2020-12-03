@@ -53,7 +53,14 @@ void generateFuncEnd(char* funcName);
  * @param retValPos Pořadí návratové hodnoty
  * @param type Typ tokenu (možno přijmout pouze DATA_TYPE_FLOAT/DATA_TYPE_INT/DATA_TYPE_STRING)
  */
-void generateRetVal(int retValPos, tokenType type);
+void generateRetValDef(int retValPos, tokenType type);
+
+/*
+ * Vygeneruje přiřazení hodnot do návratových proměnných
+ * @param retValPos Pořadí návratové hodnoty
+ * @param valueSuffix
+ */
+void generateRetVal(int retValPos, int valueSuffix);
 
 /*
  * Vygeneruje proměnnou, do které se uloží předaný parametr funkce
@@ -86,3 +93,5 @@ void generateBeforeParamPass();
  * @param valueSuffix
  */
 void generateVariable(char* name, int suffix, int valueSuffix);
+
+void generateValAssignment(char* name, int pos, int valueSuffix);

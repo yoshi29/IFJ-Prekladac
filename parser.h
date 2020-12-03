@@ -14,6 +14,16 @@
 #include "generator.h"
 
 
+typedef struct isUsedList {
+    int pos;
+    bool isUsed;
+    char* varName;
+    struct isUsedList *next;
+} IsUsedList;
+
+void addPos(IsUsedList* isUsedList, bool isUsed, char* varName);
+void isUsedListDispose(IsUsedList* isUsedList);
+
 /**
  * Hlavní funkce syntaktického analyzátoru
  * @return 1-99 v případě chyby, 0 jinak
@@ -133,9 +143,9 @@ int return_f();
 int return_val(int* retParamCnt);
 
 /*
- * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení
+ * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení, nebo při vracení hodnot
  */
-int ids_exprs_opt(int* rParamCnt);
+int ids_exprs_opt(int* rParamCnt, bool isReturn);
 
 /**
  * If
@@ -177,23 +187,26 @@ int def_var(char* idName);
  * Pravidlo <after_id> → <ids_lo>
  * @param idName Název ID, které předcházelo
  * @param lParamCnt Počítadlo parametrů levé strany přiřazení
+ * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
  */
-int after_id(char* idName, int* lParamCnt);
+int after_id(char* idName, int* lParamCnt, IsUsedList* isUsedList);
 
 /**
  * Nepovinné další identifikátory na levé straně přiřazení
  * Pravidlo <ids_lo> → ε
  * Pravidlo <ids_lo> → , <ids_l> <ids_lo>
  * @param lParamCnt Počítadlo parametrů levé strany přiřazení
+ * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
  */
-int ids_l_opt(int* lParamCnt);
+int ids_l_opt(int* lParamCnt, IsUsedList* isUsedList, char* idName);
 
 /**
  * Identifikátor nebo _
  * Pravidlo <ids_l> → id
  * Pravidlo <ids_l> → _
+ * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
  */
-int ids_l();
+int ids_l(IsUsedList* isUsedList, char* idName);
 
 /**
  * Volání funkce
@@ -229,7 +242,7 @@ int params_opt(int* paramCnt, TNode** localTS, char* funcName);
  * Pravidlo <assign_r> → <expr> <exprs_o>
  * Pravidlo <assign_r> → id <func>
  */
-int assign_r(int* lParamCnt);
+int assign_r(int* lParamCnt, IsUsedList* isUsedList);
 
 /**
  * Přiřazení ve for cyklu

@@ -446,7 +446,7 @@ int reduce(PSA_Stack *s, int rule)
             {
                 char id_num[getStrSize(scope)];
                 sprintf(id_num, "%d", scope);
-                printCode(5, "MOVE LF@*E", var_num, " LF@", current->string.str, id_num);
+                printCode(5, "MOVE LF@*E", var_num, " LF@%", current->string.str, id_num);
             }
         }
         else if (current->token_type == INT_T)

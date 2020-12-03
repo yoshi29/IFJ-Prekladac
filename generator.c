@@ -52,7 +52,7 @@ void generateFuncEnd(char* funcName) {
 	}
 }
 
-void generateRetVal(int retValPos, tokenType type) {
+void generateRetValDef(int retValPos, tokenType type) {
 	char pos[getStrSize(retValPos)];
 	sprintf(pos, "%i", retValPos);
 
@@ -73,6 +73,16 @@ void generateRetVal(int retValPos, tokenType type) {
 			break;
 	}
 }
+
+void generateRetVal(int retValPos, int valueSuffix) {
+	char pos[getStrSize(retValPos)];
+	sprintf(pos, "%i", retValPos);
+	char valueSuffixStr[getStrSize(valueSuffix)];
+	sprintf(valueSuffixStr, "%i", valueSuffix);
+
+	printCode(5, "MOVE LF@%param", pos, " ", "LF@*E", valueSuffixStr);
+}
+
 
 void generateVarFromParam(int paramPos) {
 	char pos[getStrSize(paramPos)];
@@ -132,5 +142,14 @@ void generateVariable(char* name, int suffix, int valueSuffix) {
 	sprintf(valueSuffixStr, "%i", valueSuffix);
 
 	printCode(3, "DEFVAR LF@%", name, suffixStr);
+	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
+}
+
+void generateValAssignment(char* name, int suffix, int valueSuffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+	char valueSuffixStr[getStrSize(valueSuffix)];
+	sprintf(valueSuffixStr, "%i", valueSuffix);
+
 	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
 }
