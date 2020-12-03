@@ -346,17 +346,8 @@ int getNextToken(){
                     char hex[3] = { c_prev, c, '\0' };
                     int number = (int)strtol(hex, NULL, 16);
                     char c_new[4];
-                    snprintf(c_new, 4, "%d", number);
-                    strAddChar(&s, '\\');
-                    if (number < 10) {
-                        strAddChar(&s, '0'); strAddChar(&s, '0'); strAddChar(&s, c_new[0]);
-                    }
-                    else if (number < 100) {
-                        strAddChar(&s, '0'); strAddChar(&s, c_new[0]); strAddChar(&s, c_new[1]);
-                    }
-                    else {
-                        strAddChar(&s, c_new[0]); strAddChar(&s, c_new[1]); strAddChar(&s, c_new[2]);
-                    }
+                    snprintf(c_new, 4, "%03d", number);
+                    strAddChar(&s, '\\'); strAddChar(&s, c_new[0]); strAddChar(&s, c_new[1]); strAddChar(&s, c_new[2]);
                     state = STRING_STATE;
                 }
                 else {
