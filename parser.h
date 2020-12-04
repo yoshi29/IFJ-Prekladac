@@ -145,7 +145,7 @@ int return_val(int* retParamCnt);
 /*
  * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení, nebo při vracení hodnot
  */
-int ids_exprs_opt(int* rParamCnt, bool isReturn);
+int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList);
 
 /**
  * If

@@ -12,7 +12,7 @@ int scopeCnt = 0;
 
 void TSInit(TTree* tree) {
     tree->root = NULL;
-    tree->last = NULL; //TODO: Bude potřeba?
+    tree->last = NULL;
 }
 
 TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
@@ -153,21 +153,38 @@ int TSSearchStack(TStack_Elem* stackElem, char* key) {
         if (node != NULL && node->isDefined == true) return 1;
         else return TSSearchStack(stackElem->next, key);
     }
-    else return 0; //TODO: OK řešení?
+    else return 0; 
 }
 
-int TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key) {
+TNode* TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key) {
     TNode* node;
 
     if (stackElem != NULL) {
         if ((node = TSSearch(stackElem->node, key)) != NULL && node->isDefined == true) {
-            if (node->type != FUNC) return 1; //Klíč byl nalezen a zároveň se nejedná o funkci
+            if (node->type != FUNC) return node; //Klíč byl nalezen a zároveň se nejedná o funkci
             else return TSSearchStackExceptFunc(stackElem->next, key);
         }
-        else if (TSSearch(currentFuncNode->localTS, key)) return 1; //Klíč nebyl nalezen, prohledáme ještě lokální tabulky
+        else if ((node = TSSearch(currentFuncNode->localTS, key)) != NULL) return node; //Klíč nebyl nalezen, prohledáme ještě lokální tabulky
         else return TSSearchStackExceptFunc(stackElem->next, key);
     }
-    else return 0; //TODO: OK řešení?
+    else return NULL;
+}
+
+int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key) {
+    TStack_Elem* elem = stackElem;
+    TNode* node;
+    int scope = -1;
+
+    while (elem != NULL) {
+        if ((node = TSSearch(elem->node, key)) != NULL && node->isDefined == true && node->type != FUNC) {
+            scope = elem->scope;
+        }
+        elem = elem->next;
+    }
+    if (scope == -1) { //Nebylo nalezeno, zkusíme hledat mezi formálními parametry aktuální funkce
+        if (TSSearch(currentFuncNode->localTS, key) != NULL) scope = 0;
+    }
+    return scope;
 }
 
 /*
@@ -199,7 +216,8 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
         isDefined = TSSearchStack(stackElem, key);
     }
     else {
-        isDefined = TSSearchStackExceptFunc(stackElem, key);
+        if (TSSearchStackExceptFunc(stackElem, key) == NULL) isDefined = 0;
+        else isDefined = 1;
     }
     if (isDefined == 0) {
         print_err(ERR_SEM_DEF);
@@ -215,7 +233,8 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
         //TODO: Ještě uložit, že zatím neznáme počet návratových parametrů, anebo pak nějak přiřadit lParamCnt a porovnávat při definici funkce?
     }
     else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
-        if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) { 
+        if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
+        else if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) {
             //printf("--- ERR_SEMFUNC: funcNode->para: %i, param: %i\n", funcNode->param, param);
             print_err(ERR_SEM_FUNC);
             exit(ERR_SEM_FUNC);

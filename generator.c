@@ -68,8 +68,9 @@ void generateRetValDef(int retValPos, tokenType type) {
 		case DATA_TYPE_STRING:
 			printCode(4, "MOVE LF@%retval", pos, " ", "string@");
 			break;
-		default:
-			//TODO: Jaká chyba?
+		default: //Načten nesprávný token
+			print_err(ERR_SYNTAX);
+			exit(ERR_SYNTAX);
 			break;
 	}
 }
@@ -104,7 +105,7 @@ void generateParamPass(int paramPos, Token* token) {
 	if (token->type == FLOAT_T) {
 		char floatStr[getStrSize(token->floatNumber)];
 		sprintf(floatStr, "%a", token->floatNumber);
-		printCode(5, "MOVE TF@%", pos, " ", "float@", floatStr); //TODO: Vyřešit konverze na char*
+		printCode(5, "MOVE TF@%", pos, " ", "float@", floatStr);
 	}
 	else if (token->type == INT_T) {
 		char intStr[getStrSize(token->intNumber)];
@@ -121,8 +122,9 @@ void generateParamPass(int paramPos, Token* token) {
 		sprintf(scopeStr, "%i", scope);
 		printCode(6, "MOVE TF@%", pos, " ", "LF@%", idNode->key, scopeStr);
 	}
-	else {
-		//TODO: Jaká chyba?
+	else { //Načten nesprávný token
+		print_err(ERR_SYNTAX);
+		exit(ERR_SYNTAX);
 	}
 }
 

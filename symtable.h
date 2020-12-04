@@ -154,7 +154,9 @@ int TSSearchInLocalTS(TNode* node, char* key);
  * @param key Hledaný klíč
  * @return 1 v případě nalezení klíče, 0 jinak
  */
-int TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key);
+TNode* TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key);
+
+int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key);
 
 /**
  * Vloží prvek do tabulky symbolů pouze pokud se v tabulce symbolů doposud nenachází, jinak exit

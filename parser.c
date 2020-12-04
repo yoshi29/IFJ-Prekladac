@@ -71,6 +71,7 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     TStack_Elem* stackBottom = malloc(sizeof(struct tStack_elem));
     stack.bottom = stackBottom;
     stack.bottom->node = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
+    stack.bottom->node->retTypes = NULL;
     
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL)->retTypes, 2, INT, INT);
@@ -392,13 +393,13 @@ int return_f() { //DONE ^^
     }
 }
 
-int return_val(int* retParamCnt) { //TODO: Kontrola počtu návratových hodnot
+int return_val(int* retParamCnt) { 
     int data_type, paramCnt; 
     int retVal = psa(&data_type, &paramCnt, retParamCnt, false); //Psa může zvýšit paramCnt
     if (retVal != SUCCESS) return SUCCESS;
-    *retParamCnt = *retParamCnt + 1; //TODO: Nebude tu někdy o 1 navíc, třeba kvůli návratovým hodnotám funkce?
+    *retParamCnt = *retParamCnt + 1;
     generateRetVal(*retParamCnt, psa_var_cnt);
-    retVal = ids_exprs_opt(retParamCnt, true);
+    retVal = ids_exprs_opt(retParamCnt, true, NULL);
     if (retVal == -1) retVal = SUCCESS;
     return retVal;
 }
@@ -498,7 +499,6 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
         int retParamCnt = 0;
         *lParamCnt = 0; //Přečtené ID nebude přiřazováno, jelikož se jedná o název funkce
         retVal = func(&retParamCnt, &paramCnt, idName);
-        //printf("--- lParam %i : rParam %i\n", *lParamCnt, retParamCnt);
 
         if (*lParamCnt != retParamCnt) return ERR_SEM_FUNC; //Kontrola počtu parametrů na levé a pravé straně
     }
@@ -508,7 +508,7 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
     else { //<after_id> → <ids_lo>
         TSExitIfNotDefined(stack.top, idName, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
         if (token->type == ID) addPos(isUsedList, true, idName);
-        else addPos(isUsedList, false, "");
+        else if (token->type == UNDERSCORE) addPos(isUsedList, false, "");
         retVal = ids_l_opt(lParamCnt, isUsedList, idName);
         if (retVal != SUCCESS && token->type != EQUALS) return ERR_SYNTAX;
         getToken();
@@ -575,14 +575,22 @@ int params(int *paramCnt, TNode** localTS, char* funcName) {
 
     if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
         if (token->type == ID) {
-            TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
-            //TODO: Insert s tím, že se na stacku vyhledá datový typ ID
+            string idName;
+            strInit(&idName);
+            strCopyString(&idName, &(token->string));
+
+            TSExitIfNotDefined(stack.top, idName.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
+            TNode* paramNode = TSSearchStackExceptFunc(stack.top, idName.str);
+            TSInsert(localTS, idName.str, paramNode->type, funcName, *paramCnt, NULL); //TODO: Před vložením musí proběhnout kontrola typů
         }
         else {
-            TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt); //TODO: Pokud je NULL, funkce ještě nebyla definována
+            TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt);
             if (paramNode != NULL) {
-                //printf("----------- paramNode->key: %s", paramNode->key);
                 TSInsert(localTS, paramNode->key, nodeTypeFromTokenType(token->type), true, *paramCnt, NULL);
+            }
+            else {
+                //TODO: Musí proběhnout pozdější kontrola, protože dunkce ještě nebyla definována,
+                //Informace o tom, jaký je parametr funkce by se někam měla uložit tak i tak
             }
         }
         *paramCnt = *paramCnt + 1; //Načten další parametr funkce
@@ -623,32 +631,48 @@ int params_opt(int* paramCnt, TNode** localTS, char* funcName) {
 
 int assign_r(int* lParamCnt, IsUsedList* isUsedList) { 
     int data_type;
-    int paramCnt = 0; //Začínají se počítat parametry pravé strany přiřazení
-    int rParamCnt = 1; //Pokud by nebyla v psa načtena funkce, ale id, tak na pravé straně bude nyní 1 hodnota (id); pokud byla načtena funkce, rParamCnt bude přes psa změněno na počet návratových hodnot funkce
-    int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
+    int funcParamCnt = 0; //Počítadlo pro případné parametry funkce
+    int rParamCnt = 1; //Začínají se počítat parametry pravé strany přiřazení, u volání funkce zde bude počet návratových hodnot
+    int retVal = psa(&data_type, &funcParamCnt, &rParamCnt, true);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
 
-    if (isUsedList->isUsed == true) generateValAssignment(isUsedList->varName, stack.top->scope, psa_var_cnt);
+    if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+       int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
+       if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+    }
 
-    retVal = ids_exprs_opt(&rParamCnt, false); //Počítání dalších možných ID na pravé straně přiřazení
+    if (funcParamCnt != 0 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
+
+    retVal = ids_exprs_opt(&rParamCnt, false, isUsedList); //Počítání dalších možných ID na pravé straně přiřazení
     //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
     if (retVal != SUCCESS) return retVal;
-    if (*lParamCnt != rParamCnt) return ERR_SEM_FUNC;
+    if (*lParamCnt != rParamCnt) {
+        if (funcParamCnt != 0) return ERR_SEM_FUNC;
+        else return ERR_SEM_OTHER;
+    }
     isUsedListDispose(isUsedList);
     return retVal;
 }
 
-int ids_exprs_opt(int* rParamCnt, bool isReturn) {
+int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
     int retVal = SUCCESS;
 
     if (token->type == COMMA) {
         getToken();
-        int data_type, paramCnt;
+        int data_type;
+        int paramCnt = 0; //Počítadlo pro případné parametry funkce
         retVal = psa(&data_type, &paramCnt, rParamCnt, false);
+
+        if (paramCnt != 0) return ERR_SYNTAX; //Přiřazení výstupu funkce může být pouze v případě, že je na pravé straně volání funkce jako jediné (zde by bylo 2. v pořadí)
+
+        if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+            int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
+            if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+        }
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
         *rParamCnt = *rParamCnt + 1; 
         if (isReturn) generateRetVal(*rParamCnt, psa_var_cnt);
-        retVal = ids_exprs_opt(rParamCnt, isReturn);
+        retVal = ids_exprs_opt(rParamCnt, isReturn, isUsedList);
     }
 
     //printf("IDS_EXPR_OPT: %i\n", retVal);
@@ -669,10 +693,13 @@ int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, z
 
         if (token->type == ID) {
             TSExitIfNotDefined(stack.top, token->string.str, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
-            addPos(isUsedList, true, idName.str);
+            isUsedList->isUsed = true;
+            isUsedList->varName = idName.str;
         }
-        else addPos(isUsedList, false, "");
-        strFree(&idName);
+        else {
+            isUsedList->isUsed = false;
+            isUsedList->varName = "";
+        }
         getToken();
         int lParamCnt = 1;
         retVal = ids_l_opt(&lParamCnt, isUsedList, idName.str);
@@ -681,6 +708,7 @@ int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, z
             getToken(); 
             retVal = assign_r(&lParamCnt, isUsedList);
         }
+        strFree(&idName);
     }
     return retVal;
 }
