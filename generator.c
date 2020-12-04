@@ -143,8 +143,8 @@ void generateVariable(char* name, int suffix, int valueSuffix) {
 	char valueSuffixStr[getStrSize(valueSuffix)];
 	sprintf(valueSuffixStr, "%i", valueSuffix);
 
-	printCode(3, "DEFVAR LF@%", name, suffixStr);
-	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
+	printCode(3, "DEFVAR LF@", name, suffixStr);
+	printCode(6, "MOVE LF@", name, suffixStr, " ", "LF@*E", valueSuffixStr);
 }
 
 void generateValAssignment(char* name, int suffix, int valueSuffix) {
@@ -153,7 +153,7 @@ void generateValAssignment(char* name, int suffix, int valueSuffix) {
 	char valueSuffixStr[getStrSize(valueSuffix)];
 	sprintf(valueSuffixStr, "%i", valueSuffix);
 
-	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
+	printCode(6, "MOVE LF@", name, suffixStr, " ", "LF@*E", valueSuffixStr);
 }
 
 void generateLabel(char* name, int suffix) {
@@ -192,11 +192,11 @@ void generateForVar(char* name, int scope, bool start) {
 	char suffixStr[getStrSize(scope)];
 	sprintf(suffixStr, "%i", scope);
 	if (start) {
-		printCode(3, "DEFVAR TF@%", name, suffixStr);
-		printCode(7, "MOVE TF@%", name, suffixStr, " ", "LF@%", name, suffixStr);
+		printCode(3, "DEFVAR TF@", name, suffixStr);
+		printCode(7, "MOVE TF@", name, suffixStr, " ", "LF@", name, suffixStr);
 	}
 	else {
-		printCode(7, "MOVE LF@%", name, suffixStr, " ", "TF@%", name, suffixStr);
+		printCode(7, "MOVE LF@", name, suffixStr, " ", "TF@", name, suffixStr);
 	}
 }
 
