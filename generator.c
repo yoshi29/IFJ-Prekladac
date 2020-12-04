@@ -155,3 +155,94 @@ void generateValAssignment(char* name, int suffix, int valueSuffix) {
 
 	printCode(6, "MOVE LF@%", name, suffixStr, " ", "LF@*E", valueSuffixStr);
 }
+
+void generateLabel(char* name, int suffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+
+	printCode(4, "LABEL", " ", name, suffixStr);
+}
+
+void generateForJump(int suffix, int valueSuffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+	char valueSuffixStr[getStrSize(valueSuffix)];
+	sprintf(valueSuffixStr, "%i", valueSuffix);
+
+	printCode(9, "JUMPIFEQ", " ", "for-end", suffixStr, " ", "LF@*E", valueSuffixStr, " ", "bool@false");
+}
+
+void generateIfJump(int suffix, int valueSuffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+	char valueSuffixStr[getStrSize(valueSuffix)];
+	sprintf(valueSuffixStr, "%i", valueSuffix);
+
+	printCode(9, "JUMPIFEQ", " ", "else", suffixStr, " ", "LF@*E", valueSuffixStr, " ", "bool@false");
+}
+
+void generateJump(char* name, int suffix) {
+	char suffixStr[getStrSize(suffix)];
+	sprintf(suffixStr, "%i", suffix);
+
+	printCode(4, "JUMP", " ", name, suffixStr);
+}
+
+void generateForVar(char* name, int scope, bool start) {
+	char suffixStr[getStrSize(scope)];
+	sprintf(suffixStr, "%i", scope);
+	if (start) {
+		printCode(3, "DEFVAR TF@%", name, suffixStr);
+		printCode(7, "MOVE TF@%", name, suffixStr, " ", "LF@%", name, suffixStr);
+	}
+	else {
+		printCode(7, "MOVE LF@%", name, suffixStr, " ", "TF@%", name, suffixStr);
+	}
+}
+
+void generateForAllVars(TNode* root, int scope, bool start) {
+	if (root != NULL) {
+		if (root->type != FUNC)
+			generateForVar(root->key, scope, start);
+		generateForAllVars(root->lptr, scope, start);
+		generateForAllVars(root->rptr, scope, start);
+	}
+}
+
+void generateForParam(int scope, bool start) {
+	char suffixStr[getStrSize(scope)];
+	sprintf(suffixStr, "%i", scope);
+	if (start) {
+		printCode(2, "DEFVAR TF@%param", suffixStr);
+		printCode(5, "MOVE TF@%param", suffixStr, " ", "LF@%param", suffixStr);
+	}
+	else {
+		printCode(5, "MOVE LF@%param", suffixStr, " ", "TF@%param", suffixStr);
+	}
+}
+
+void generateForAllParams(TNode* root, bool start) {
+	if (root != NULL) {
+		if (root->type != FUNC)
+			generateForParam(root->param + 1, start);
+		generateForAllParams(root->lptr, start);
+		generateForAllParams(root->rptr, start);
+	}
+}
+
+void generateForFrame(bool start) {
+	if (start)
+		printInstr("CREATEFRAME");
+	else
+		printInstr("POPFRAME");
+
+	TStack_Elem* current_frame = stack.top;
+	while (current_frame != NULL) {
+		generateForAllVars(current_frame->node, current_frame->scope, start);
+		current_frame = current_frame->next;
+	}
+	generateForAllParams(currentFuncNode->localTS, start);
+
+	if (start)
+		printInstr("PUSHFRAME");
+}

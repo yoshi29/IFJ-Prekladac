@@ -95,3 +95,45 @@ void generateBeforeParamPass();
 void generateVariable(char* name, int suffix, int valueSuffix);
 
 void generateValAssignment(char* name, int pos, int valueSuffix);
+
+/*
+ * Vygeneruje návěští
+ * @param name Název návěští
+ * @param suffix Unikátní číslo pro návěští
+ */
+void generateLabel(char* name, int suffix);
+
+/*
+ * Vygeneruje podmíněný skok pro for
+ * @param suffix Unikátní číslo pro for
+ * @param valueSuffix Suffix proměnné, kde se nachází výsledek výrazu
+ */
+void generateForJump(int suffix, int valueSuffix);
+
+/*
+ * Vygeneruje podmíněný skok pro if
+ * @param suffix Unikátní číslo pro if
+ * @param valueSuffix Suffix proměnné, kde se nachází výsledek výrazu
+ */
+void generateIfJump(int suffix, int valueSuffix);
+
+/*
+ * Vygeneruje skok
+ * @param name Název návěští, kam se má skočit
+ * @param suffix Suffix návěští
+ */
+void generateJump(char* name, int suffix);
+
+void generateForVar(char* name, int scope, bool start);
+
+void generateForAllVars(TNode* root, int scope, bool start);
+
+void generateForParam(int scope, bool start);
+
+void generateForAllParams(TNode* root, bool start);
+
+/*
+ * Vygeneruje nový rámec pro for (jedná-li se o začátek foru) a nebo ho odstraní (jedná-li se o konec)
+ * @param start true, pokud se jedná o začátek foru, jinak false
+ */
+void generateForFrame(bool start);

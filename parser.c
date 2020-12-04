@@ -8,6 +8,9 @@
 TTree* symTable;
 int returnedSth;
 
+int ifCnt = 0;
+int forCnt = 0;
+
 Token* getToken() { 
     int retVal = getNextToken();
     if (retVal != SUCCESS) {
@@ -406,10 +409,11 @@ int return_val(int* retParamCnt) {
 
 int if_f() {
     //Minulý token byl if
+    int cnt = ifCnt++;
     int data_type, paramCnt, rParamCnt; //Zde nevyužito
     int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
     if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
-
+    generateIfJump(cnt, psa_var_cnt); // If podmínka
     if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
         PushFrame(&stack); //Začátek těla if
         getNonEolToken();
@@ -420,7 +424,12 @@ int if_f() {
         getToken();
         PopFrame(&stack); //Konec těla if
 
+        generateJump("if-end", cnt);
+        generateLabel("else", cnt);
+
         retVal = else_f();
+
+        generateLabel("if-end", cnt);
     }
     else retVal = ERR_SYNTAX;
 
@@ -428,26 +437,40 @@ int if_f() {
 }
 
 int for_f() {
+    int cnt = forCnt++;
+    printInstr("# --------- FOR start");
     int retVal = def();
     if (retVal != SUCCESS) return retVal;
 
     if (token->type == SEMICOLON) {
+        generateLabel("for-start", cnt);
+        generateForFrame(true); // Vygeneruj nový TF, vlož do něj proměnné a udělej z něho LF
         getToken();
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
         if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+        generateForJump(cnt, psa_var_cnt); // For podmínka
+        generateJump("for-body", cnt);
+        generateLabel("for-assign", cnt);
         if (token->type == SEMICOLON) {
             getToken();
             retVal = assign();
             if (retVal != SUCCESS) return retVal;
+            generateForFrame(false); // Z LF udělej TF a aktualizuj proměnné
+            generateJump("for-start", cnt);
+            generateLabel("for-body", cnt);
             if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
                 PushFrame(&stack); //Začátek těla for
                 getNonEolToken();
                 retVal = body();
                 if (retVal != SUCCESS) return SUCCESS;
                 if (token->type != RC_BRACKET) return ERR_SYNTAX;
+                generateJump("for-assign", cnt);
+                generateLabel("for-end", cnt);
                 PopFrame(&stack); //Konec těla for
+                generateForFrame(false); // Z LF udělej TF a aktualizuj proměnné
                 PopFrame(&stack); //Konec definiční části for cyklu
+                printInstr("# --------- FOR end");
                 getToken();
             }
             else return ERR_SYNTAX;
