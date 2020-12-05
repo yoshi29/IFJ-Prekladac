@@ -34,12 +34,14 @@ void addPos(IsUsedList *isUsedList, bool isUsed, char* varName) {
     current->next = malloc(sizeof(struct isUsedList));
     current->next->pos = current->pos + 1;
     current->next->isUsed = isUsed;
-    current->next->varName = varName;
+    current->next->varName = malloc(strlen(varName) + 1);
+    strcpy(current->next->varName, varName);
     current->next->next = NULL;
 }
 
 void isUsedListDispose(IsUsedList* isUsedList) {
     if (isUsedList != NULL) {
+        free(isUsedList->varName);
         isUsedListDispose(isUsedList->next);
         free(isUsedList);
     }
@@ -358,7 +360,7 @@ int body() { //DONE ^^
             isUsedList->varName = "";
 
             getToken();
-            retVal = ids_l_opt(&lParamCnt, isUsedList, "");
+            retVal = ids_l_opt(&lParamCnt, isUsedList);
             if (retVal != SUCCESS) return retVal;
             if (token->type != EQUALS) return ERR_SYNTAX;
             getToken();
@@ -530,9 +532,9 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
     }
     else { //<after_id> → <ids_lo>
         TSExitIfNotDefined(stack.top, idName, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
-        if (token->type == ID) addPos(isUsedList, true, idName);
-        else if (token->type == UNDERSCORE) addPos(isUsedList, false, "");
-        retVal = ids_l_opt(lParamCnt, isUsedList, idName);
+        /*if (token->type == ID) addPos(isUsedList, true, idName);
+        else if (token->type == UNDERSCORE) addPos(isUsedList, false, "");*/
+        retVal = ids_l_opt(lParamCnt, isUsedList);
         if (retVal != SUCCESS && token->type != EQUALS) return ERR_SYNTAX;
         getToken();
         retVal = assign_r(lParamCnt, isUsedList);
@@ -542,9 +544,13 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
     return retVal;
 }
 
-int ids_l(IsUsedList *isUsedList, char* idName) {
+int ids_l(IsUsedList *isUsedList) {
     if (token->type == ID) {
-        addPos(isUsedList, true, idName);
+        string idName;
+        strInit(&idName);
+        strCopyString(&idName, &(token->string));
+        addPos(isUsedList, true, idName.str);
+        strFree(&idName);
         getToken();
         TSExitIfNotDefined(stack.top, token->string.str, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
         return SUCCESS;
@@ -557,15 +563,15 @@ int ids_l(IsUsedList *isUsedList, char* idName) {
     else return ERR_SYNTAX;
 }
 
-int ids_l_opt(int* lParamCnt, IsUsedList *isUsedList, char* idName) {
+int ids_l_opt(int* lParamCnt, IsUsedList *isUsedList) {
     int retVal = SUCCESS;
 
     if (token->type == COMMA) {
         getToken();
-        retVal = ids_l(isUsedList, idName);
+        retVal = ids_l(isUsedList);
         *lParamCnt = *lParamCnt + 1;
         if (retVal != SUCCESS) return retVal;
-        retVal = ids_l_opt(lParamCnt, isUsedList, idName);
+        retVal = ids_l_opt(lParamCnt, isUsedList);
     }
 
     //printf("IDS_L_OPT: %i\n", retVal);
@@ -574,12 +580,12 @@ int ids_l_opt(int* lParamCnt, IsUsedList *isUsedList, char* idName) {
 
 int func(int* retParamCnt, int* paramCnt, char* funcName) { //DONE ^^
     int retVal = ERR_SYNTAX;
-    *paramCnt = 0; //Bude načítán první parametr funkce
     TNode* localTS = NULL;
 
     if (token->type == L_BRACKET) {
+        *paramCnt = 0;
         getNonEolToken(); //za závorkou možný EOL
-        generateBeforeParamPass();
+        generateBeforeParamPass(); //TODO: Nebude tu navíc, pokud bude funkce bez parametrů?
         retVal = params(paramCnt, &localTS, funcName);
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
 
@@ -654,19 +660,29 @@ int params_opt(int* paramCnt, TNode** localTS, char* funcName) {
 
 int assign_r(int* lParamCnt, IsUsedList* isUsedList) { 
     int data_type;
-    int funcParamCnt = 0; //Počítadlo pro případné parametry funkce
+    int funcParamCnt = -1; //Počítadlo pro případné parametry funkce, pokud zůstane -1, nejedná se o volání funkce
     int rParamCnt = 1; //Začínají se počítat parametry pravé strany přiřazení, u volání funkce zde bude počet návratových hodnot
     int retVal = psa(&data_type, &funcParamCnt, &rParamCnt, true);
     if (retVal != SUCCESS) return retVal;
     if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
 
-    if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
-       int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
-       if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+    if (funcParamCnt != -1) { //Následuje přiřazování hodnot vrácených z funkce
+        for (int i = 1; i < rParamCnt+1; i++) { //i = 1, rParamCnt+1 protože proměnné s návratovými hodnotami jsou číslovány od 1
+            if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+                int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
+                if (scope != -1) generateRetValAssignment(isUsedList->varName, scope, i);
+            }
+            isUsedList = isUsedList->next;
+        }
+    }
+    else {
+        if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+            int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
+            if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+        }
     }
 
-    if (funcParamCnt != 0 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
-
+    if (funcParamCnt != -1 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
     retVal = ids_exprs_opt(&rParamCnt, false, isUsedList); //Počítání dalších možných ID na pravé straně přiřazení
     //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
     if (retVal != SUCCESS) return retVal;
@@ -684,14 +700,17 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
     if (token->type == COMMA) {
         getToken();
         int data_type;
-        int paramCnt = 0; //Počítadlo pro případné parametry funkce
+        int paramCnt = -1; //Počítadlo pro případné parametry funkce
         retVal = psa(&data_type, &paramCnt, rParamCnt, false);
 
-        if (paramCnt != 0) return ERR_SYNTAX; //Přiřazení výstupu funkce může být pouze v případě, že je na pravé straně volání funkce jako jediné (zde by bylo 2. v pořadí)
-
-        if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
-            int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
-            if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+        if (paramCnt != -1) return ERR_SYNTAX; //Přiřazení výstupu funkce může být pouze v případě, že je na pravé straně volání funkce jako jediné (zde by bylo 2. v pořadí)
+        
+        if (isUsedList != NULL) { //NULL bude v případě, že jsme v return části
+            isUsedList = isUsedList->next;
+            if (isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+                int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
+                if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt);
+            }
         }
         if (retVal != SUCCESS) return retVal;
         if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
@@ -727,7 +746,7 @@ int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, z
         }
         getToken();
         int lParamCnt = 1;
-        retVal = ids_l_opt(&lParamCnt, isUsedList, idName.str);
+        retVal = ids_l_opt(&lParamCnt, isUsedList);
         if (retVal != SUCCESS) return retVal;
         if (token->type == EQUALS) {
             getToken(); 

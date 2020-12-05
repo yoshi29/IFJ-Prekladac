@@ -198,7 +198,7 @@ int after_id(char* idName, int* lParamCnt, IsUsedList* isUsedList);
  * @param lParamCnt Počítadlo parametrů levé strany přiřazení
  * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
  */
-int ids_l_opt(int* lParamCnt, IsUsedList* isUsedList, char* idName);
+int ids_l_opt(int* lParamCnt, IsUsedList* isUsedList);
 
 /**
  * Identifikátor nebo _
@@ -206,7 +206,7 @@ int ids_l_opt(int* lParamCnt, IsUsedList* isUsedList, char* idName);
  * Pravidlo <ids_l> → _
  * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
  */
-int ids_l(IsUsedList* isUsedList, char* idName);
+int ids_l(IsUsedList* isUsedList);
 
 /**
  * Volání funkce

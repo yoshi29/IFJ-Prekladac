@@ -238,6 +238,8 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
     else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
         if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
         else if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) {
+            fprintf(stderr, "---------------------- RETVAL: \n");
+
             //printf("--- ERR_SEMFUNC: funcNode->para: %i, param: %i\n", funcNode->param, param);
             print_err(ERR_SEM_FUNC);
             exit(ERR_SEM_FUNC);

@@ -63,6 +63,14 @@ void generateRetValDef(int retValPos, tokenType type);
 void generateRetVal(int retValPos, int valueSuffix);
 
 /*
+ * Vygeneruje přiřazení hodnoty vrácné z funkce
+ * @param name Jméno proměnné, do které se hodnota ukládá
+ * @param suffix Číslo aktuálního rámce, budoucí suffix proměnné
+ * @param retValPos Pořadí návratové hodnoty, která má být přiřazena
+ */
+void generateRetValAssignment(char* name, int suffix, int retValPos);
+
+/*
  * Vygeneruje proměnnou, do které se uloží předaný parametr funkce
  * @param retValPos Pořadí parametru
  */

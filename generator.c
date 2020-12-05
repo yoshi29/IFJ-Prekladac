@@ -83,6 +83,23 @@ void generateRetVal(int retValPos, int valueSuffix) {
 	printCode(5, "MOVE LF@%retval", pos, " ", "LF@*E", valueSuffixStr);
 }
 
+void generateRetValAssignment(char* name, int suffix, int retValPos) {
+	char retValPosStr[getStrSize(retValPos)];
+	sprintf(retValPosStr, "%i", retValPos);
+
+	if (suffix == 0) { // Jedná se o formální parametr funkce
+		char suffixStr[getStrSize(suffix + 1)];
+		sprintf(suffixStr, "%i", suffix + 1);
+
+		printCode(5, "MOVE LF@%param", suffixStr, " ", "TF@%retval", retValPosStr);
+	}
+	else { // Jedná se o lokální proměnnou
+		char suffixStr[getStrSize(suffix)];
+		sprintf(suffixStr, "%i", suffix);
+
+		printCode(6, "MOVE LF@", name, suffixStr, " ", "TF@%retval", retValPosStr);
+	}
+}
 
 void generateVarFromParam(int paramPos) {
 	char pos[getStrSize(paramPos)];
@@ -434,11 +451,6 @@ void generateInputs() {
 		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
 
 		"LABEL $inputs$ok"
-
-		"\n DPRINT LF@%err"
-		"\n DPRINT LF@%type"
-		"\n DPRINT LF@%retval1"
-		"\n DPRINT LF@%retval2"
 	);
 	generateFuncEnd("inputs");
 }
@@ -458,11 +470,6 @@ void generateInputi() {
 		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
 
 		"LABEL $inputi$ok"
-
-		"\n DPRINT LF@%err"
-		"\n DPRINT LF@%type"
-		"\n DPRINT LF@%retval1"
-		"\n DPRINT LF@%retval2"
 	);
 	generateFuncEnd("inputi");
 }
@@ -482,11 +489,6 @@ void generateInputf() {
 		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
 
 		"LABEL $inputf$ok"
-
-		"\n DPRINT LF@%err"
-		"\n DPRINT LF@%type"
-		"\n DPRINT LF@%retval1"
-		"\n DPRINT LF@%retval2"
 	);
 	generateFuncEnd("inputf");
 }
