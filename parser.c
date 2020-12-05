@@ -408,7 +408,7 @@ int if_f() {
     //Minulý token byl if
     int cnt = ifCnt++;
     int data_type, paramCnt, rParamCnt; //Zde nevyužito
-    int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
+    int retVal = psa(&data_type, &paramCnt, &rParamCnt, false);
     if (retVal != SUCCESS) return retVal;
     if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
     generateIfJump(cnt, psa_var_cnt); // If podmínka
@@ -445,7 +445,7 @@ int for_f() {
         generateForFrame(true); // Vygeneruj nový TF, vlož do něj proměnné a udělej z něho LF
         getToken();
         int data_type, paramCnt, rParamCnt;
-        retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
+        retVal = psa(&data_type, &paramCnt, &rParamCnt, false);
         if (retVal != SUCCESS) return retVal;
         if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
         generateForJump(cnt, psa_var_cnt); // For podmínka

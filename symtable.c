@@ -98,7 +98,9 @@ TNode* TSSearchStackAndReturn(TStack_Elem* stackElem, char* key, int* scope) {
         return node;
     }
     else if (currentFuncNode != NULL) {
-        return TSSearch(currentFuncNode->localTS, key);
+        if ((node = TSSearch(currentFuncNode->localTS, key)) != NULL)
+            *scope = 0;
+        return node;
     }
     else return NULL;
 }

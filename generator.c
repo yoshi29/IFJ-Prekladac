@@ -80,7 +80,7 @@ void generateRetVal(int retValPos, int valueSuffix) {
 	char valueSuffixStr[getStrSize(valueSuffix)];
 	sprintf(valueSuffixStr, "%i", valueSuffix);
 
-	printCode(5, "MOVE LF@%param", pos, " ", "LF@*E", valueSuffixStr);
+	printCode(5, "MOVE LF@%retval", pos, " ", "LF@*E", valueSuffixStr);
 }
 
 
@@ -145,12 +145,22 @@ void generateVariable(char* name, int suffix, int valueSuffix) {
 }
 
 void generateValAssignment(char* name, int suffix, int valueSuffix) {
-	char suffixStr[getStrSize(suffix)];
-	sprintf(suffixStr, "%i", suffix);
+	
 	char valueSuffixStr[getStrSize(valueSuffix)];
 	sprintf(valueSuffixStr, "%i", valueSuffix);
 
-	printCode(6, "MOVE LF@", name, suffixStr, " ", "LF@*E", valueSuffixStr);
+	if (suffix == 0) { // Jedná se o parametr funkce
+		char suffixStr[getStrSize(suffix + 1)];
+		sprintf(suffixStr, "%i", suffix + 1);
+		
+		printCode(5, "MOVE LF@%param", suffixStr, " ", "LF@*E", valueSuffixStr);
+	}
+	else { // Jedná se o lokální proměnnou
+		char suffixStr[getStrSize(suffix)];
+		sprintf(suffixStr, "%i", suffix);
+
+		printCode(6, "MOVE LF@", name, suffixStr, " ", "LF@*E", valueSuffixStr);
+	}
 }
 
 void generateLabel(char* name, int suffix) {
@@ -337,7 +347,7 @@ void generateSubstr() {
 		"LABEL $err\n" //chyba
 		"MOVE LF@%retval2 int@1\n"
 
-		"LABEL $end\n"
+		"LABEL $end"
 	);	
 	generateFuncEnd("substr");
 }

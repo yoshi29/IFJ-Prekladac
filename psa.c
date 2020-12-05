@@ -436,10 +436,11 @@ int reduce(PSA_Stack *s, int rule)
 
             current->node_type = node->type;
             
-            if (node->param != 0) // Jedná se o parametr funkce
+            
+            if (scope == 0) // Jedná se o parametr funkce
             {
                 char param_num[getStrSize(node->param)];
-                sprintf(param_num, "%d", node->param);
+                sprintf(param_num, "%d", node->param + 1); // node->param se počítá od 0
                 printCode(4, "MOVE LF@*E", var_num, " LF@%param", param_num);
             }
             else
