@@ -260,7 +260,13 @@ void generateBuiltInFunctions() {
 	generateInt2Float();
 	generateFloat2Int();
 	generateLen();
+	generateOrd();
+	generateChr();
 	generateSubstr();
+	generateInputs();
+	generateInputi();
+	generateInputf();
+	generatePrint();
 }
 
 void generateInt2Float() {
@@ -290,6 +296,67 @@ void generateLen() {
 	generateFuncEnd("len");
 }
 
+void generateOrd() {
+	generateFuncStart("ord");
+	printInstr( //LF@%1 - s string, LF@%2 - i int
+		"DEFVAR LF@%retval1\n"
+		"MOVE LF@%retval1 string@\n"
+
+		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
+
+		"CREATEFRAME\n"
+		"DEFVAR TF@%1\n"
+		"MOVE TF@%1 LF@%1\n"
+		"CALL $len\n"
+		"DEFVAR LF@%string_length\n"
+		"MOVE LF@%string_length TF@%retval1\n" //string_length = délka řetězce s
+
+		"SUB LF@%string_length LF@%string_length int@1\n" //-1 => Korekce počítání od 0 kvůli i
+
+		"DEFVAR LF@%err\n"
+		"LT LF@%err LF@%2 int@0\n"
+		"JUMPIFEQ $ord$err LF@%err bool@true\n" //je-li i < 0 => chyba
+		"GT LF@%err LF@%2 LF@%string_length\n"
+		"JUMPIFNEQ $ord$not_err LF@%err bool@true\n" //je-li i > string_length-1 => chyba
+		"LABEL $ord$err\n"
+		"MOVE LF@%retval2 int@1\n" 
+		"JUMP $ord$end\n"
+
+		"LABEL $ord$not_err\n" //nenastala chyba
+		"STRI2INT LF@%retval1 LF@%1 LF@%2\n"
+
+		"LABEL $ord$end"
+	);
+	generateFuncEnd("ord");
+}
+
+void generateChr() {
+	generateFuncStart("chr");
+	printInstr( //LF@%1 - i int
+		"DEFVAR LF@%retval1\n"
+		"MOVE LF@%retval1 string@\n"
+
+		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
+
+		"DEFVAR LF@%err\n"
+		"LT LF@%err LF@%1 int@0\n"
+		"JUMPIFEQ $chr$err LF@%err bool@true\n"  //je-li i < 0 => chyba
+		"GT LF@%err LF@%1 int@255\n"
+		"JUMPIFEQ $chr$err LF@%err bool@true\n"  //je-li i > 255 => chyba
+
+		"INT2CHAR LF@%retval1 LF@%1\n"
+		"JUMP $chr$end\n"
+
+		"LABEL $chr$err\n"
+		"MOVE LF@%retval2 int@1\n"
+
+		"LABEL $chr$end"
+	);
+	generateFuncEnd("chr");
+}
+
 void generateSubstr() {
 	generateFuncStart("substr");
 	printInstr( //LF@%1 - s string, LF@%2 - i int, LF@%2 - n int
@@ -310,21 +377,21 @@ void generateSubstr() {
 		
 		"DEFVAR LF@%err\n"
 		"LT LF@%err LF@%2 int@0\n"
-		"JUMPIFEQ $err LF@%err bool@true\n"  //je-li i < 0 => chyba
+		"JUMPIFEQ $substr$err LF@%err bool@true\n"  //je-li i < 0 => chyba
 		"LT LF@%err LF@%3 int@0\n" 
-		"JUMPIFEQ $err LF@%err bool@true\n" //je-li n < 0 => chyba
+		"JUMPIFEQ $substr$err LF@%err bool@true\n" //je-li n < 0 => chyba
 		"GT LF@%err LF@%2 LF@%string_length\n" 
-		"JUMPIFEQ $err LF@%err bool@true\n" //je-li i > len(s)-1 => chyba (i > maximální povolený index)
+		"JUMPIFEQ $substr$err LF@%err bool@true\n" //je-li i > len(s)-1 => chyba (i > maximální povolený index)
 
 		"DEFVAR LF@%set_n_max\n" 
 		"DEFVAR LF@%diff\n" 
 		"SUB LF@%diff LF@%string_length LF@%2\n" //diff = len(s)-i
 		"ADD LF@%diff LF@%diff int@1\n" //Zpětná korekce +1
 		"GT LF@%set_n_max LF@%3 LF@%diff\n"
-		"JUMPIFNEQ $not_max LF@%set_n_max bool@true\n" //není-li n > len(s)-i => NEnastavit n na max
+		"JUMPIFNEQ $substr$not_max LF@%set_n_max bool@true\n" //není-li n > len(s)-i => NEnastavit n na max
 		"MOVE LF@%3 LF@%diff\n" //n = diff
 
-		"LABEL $not_max\n"
+		"LABEL $substr$not_max\n"
 
 		"DEFVAR LF@%tmp\n" //Pomocná proměnná pro getchar
 		"MOVE LF@%tmp string@\n"
@@ -334,20 +401,97 @@ void generateSubstr() {
 		"SUB LF@%3 LF@%3 int@1\n" //n = n+i-1 ... index posledního znaku vraceného řetězce
 
 		"GT LF@%end LF@%2 LF@%3\n" //je-li i > n => konec
-		"JUMPIFEQ $end LF@%end bool@true\n" //n = 0
+		"JUMPIFEQ $substr$end LF@%end bool@true\n" //n = 0
 
-		"LABEL $loop_start\n"
+		"LABEL $substr$loop_start\n"
 		"GETCHAR LF@%tmp LF@%1 LF@%2\n"
 		"CONCAT LF@%retval1 LF@%retval1 LF@%tmp\n"
 		"ADD LF@%2 LF@%2 int@1\n" //i++
 		"GT LF@%end LF@%2 LF@%3\n" //je-li i > n => konec
-		"JUMPIFNEQ $loop_start LF@%end bool@true\n"
-		"JUMP $end\n"
+		"JUMPIFNEQ $substr$loop_start LF@%end bool@true\n"
+		"JUMP $substr$end\n"
 
-		"LABEL $err\n" //chyba
+		"LABEL $substr$err\n" //chyba
 		"MOVE LF@%retval2 int@1\n"
 
-		"LABEL $end"
+		"LABEL $substr$end"
 	);	
 	generateFuncEnd("substr");
+}
+
+void generateInputs() {
+	generateFuncStart("inputs");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"DEFVAR LF@%retval2\n"
+		"DEFVAR LF@%type\n"
+		"DEFVAR LF@%err\n"
+
+		"READ LF@%retval1 string\n"
+		"TYPE LF@%type LF@%retval1\n" //zjistí typ načtené hodnoty
+		"EQ LF@%err LF@%type string@nil\n" 
+		"JUMPIFNEQ $inputs$ok LF@%err bool@true\n"
+		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
+
+		"LABEL $inputs$ok"
+
+		"\n DPRINT LF@%err"
+		"\n DPRINT LF@%type"
+		"\n DPRINT LF@%retval1"
+		"\n DPRINT LF@%retval2"
+	);
+	generateFuncEnd("inputs");
+}
+
+void generateInputi() {
+	generateFuncStart("inputi");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"DEFVAR LF@%retval2\n"
+		"DEFVAR LF@%type\n"
+		"DEFVAR LF@%err\n"
+
+		"READ LF@%retval1 int\n"
+		"TYPE LF@%type LF@%retval1\n" //zjistí typ načtené hodnoty
+		"EQ LF@%err LF@%type string@nil\n"
+		"JUMPIFNEQ $inputi$ok LF@%err bool@true\n"
+		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
+
+		"LABEL $inputi$ok"
+
+		"\n DPRINT LF@%err"
+		"\n DPRINT LF@%type"
+		"\n DPRINT LF@%retval1"
+		"\n DPRINT LF@%retval2"
+	);
+	generateFuncEnd("inputi");
+}
+
+void generateInputf() {
+	generateFuncStart("inputf");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"DEFVAR LF@%retval2\n"
+		"DEFVAR LF@%type\n"
+		"DEFVAR LF@%err\n"
+
+		"READ LF@%retval1 float\n"
+		"TYPE LF@%type LF@%retval1\n" //zjistí typ načtené hodnoty
+		"EQ LF@%err LF@%type string@nil\n"
+		"JUMPIFNEQ $inputf$ok LF@%err bool@true\n"
+		"MOVE LF@%retval2 int@1\n" //pokud je type nil => chyba
+
+		"LABEL $inputf$ok"
+
+		"\n DPRINT LF@%err"
+		"\n DPRINT LF@%type"
+		"\n DPRINT LF@%retval1"
+		"\n DPRINT LF@%retval2"
+	);
+	generateFuncEnd("inputf");
+}
+
+void generatePrint() {
+	generateFuncStart("print");
+	generateFuncEnd("print");
 }

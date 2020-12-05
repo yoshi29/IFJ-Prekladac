@@ -166,6 +166,22 @@ void generateFloat2Int();
 void generateLen();
 
 /*
+ * Vygeneruje vestavěnou funkci ord
+ func ord(s string, i int) (int, int) – Vrátí ordinální hodnotu (ASCII)
+ znaku na pozici 𝑖 v řetězci 𝑠. Je-li index 𝑖 mimo meze řetězce (0 až len(s) - 1), vrací
+ funkce v příznaku chyby hodnotu 1.
+ */
+void generateOrd();
+
+/*
+ * Vygeneruje vestavěnou funkci chr
+ func chr(i int) (string, int) – Vrátí jednoznakový řetězec se znakem, jehož
+ ASCII kód je zadán parametrem 𝑖. Případ, kdy je 𝑖 mimo interval [0; 255], vede na
+ hodnotu 1 v příznaku chyby.
+ */
+void generateChr();
+
+/*
  * Vygeneruje vestavěnou funkci substr
   func substr(s string, i int, n int) (string, int) – Vrátí podřetězec
   zadaného řetězce 𝑠. Druhým parametrem 𝑖 je dán začátek požadovaného podřetězce
@@ -174,3 +190,20 @@ void generateLen();
   len(s)−𝑖, jsou jako řetězec vráceny od 𝑖-tého znaku všechny zbývající znaky řetězce
  */
 void generateSubstr();
+
+/*
+ * Vygeneruje vestavěnou funkci inputs
+ */
+void generateInputs();
+
+/*
+ * Vygeneruje vestavěnou funkci inputi
+ */
+void generateInputi();
+
+/*
+ * Vygeneruje vestavěnou funkci inputf
+ */
+void generateInputf();
+
+void generatePrint();
