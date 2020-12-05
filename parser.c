@@ -48,19 +48,18 @@ void isUsedListDispose(IsUsedList* isUsedList) {
 /* ------------------------------------------------------------------------------- */
 
 int parse(FILE* file) {
-    //symTable = (TTree*)malloc(sizeof(struct tTree)); //TTree je vlastně teď redundantní, když z něj aktuálně nepoužíváme last
-    //TSInit(symTable);
-
     TStackInit(&stack);
     PushFrame(&stack); // Vloží se nový prvek do zásobníku a nastaví se mu hodnoty
     stack.bottom = stack.top;
-    insert_built_in_funcs();
 
     token = malloc(sizeof(Token));
     strInit(&(token->string));
     currentFuncNode = malloc(sizeof(TNode));
 
     getSourceCode(file);
+
+    generateHeader(); //-- Generování hlavičky
+    insert_built_in_funcs();
 
     int retVal = program();
     if (retVal == SUCCESS) checkFunctionDefinition();
@@ -79,7 +78,9 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     addMultipleRetType(&TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL)->retTypes, 1, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL)->retTypes, 2, STRING, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL)->retTypes, 2, INT, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);    
+    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);  
+
+    generateBuiltInFunctions();
 }
 
 void checkFunctionDefinition() { //TODO: Možná ještě bude potřeba otestovat, až se budou do tabulky symbolů na nejvyšší úroveň přidávat volané funkce
@@ -112,7 +113,6 @@ int program() { //DONE ^^
     if (strCmpConstStr(&(getNonEolToken()->string), "package") == 0
         && strCmpConstStr(&(getToken()->string), "main") == 0
         && getToken()->type == EOL_T) {
-            generateHeader(); //-- Generování hlavičky
             getNonEolToken();
             retVal = def_func_opt();
             if (retVal != SUCCESS) return retVal;

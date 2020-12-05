@@ -94,6 +94,12 @@ void generateBeforeParamPass();
  */
 void generateVariable(char* name, int suffix, int valueSuffix);
 
+/*
+ * Vygeneruje přiřazení hodnoty
+ * @param name Název proměnné, do které se přiřazuje
+ * @param pos Číslo aktuálního rámce, budoucí suffix proměnné
+ * @param valueSuffix
+ */
 void generateValAssignment(char* name, int pos, int valueSuffix);
 
 /*
@@ -137,3 +143,34 @@ void generateForAllParams(TNode* root, bool start);
  * @param start true, pokud se jedná o začátek foru, jinak false
  */
 void generateForFrame(bool start);
+
+/*
+ * Vygeneruje podmíněný skok pro for
+ * Vygeneruje vestavěné funkce
+ */
+void generateBuiltInFunctions();
+
+/*
+ * Vygeneruje vestavěnou funkci int2float
+ */
+void generateInt2Float();
+
+/*
+ * Vygeneruje vestavěnou funkci float2int
+ */
+void generateFloat2Int();
+
+/*
+ * Vygeneruje vestavěnou funkci len
+ */
+void generateLen();
+
+/*
+ * Vygeneruje vestavěnou funkci substr
+  func substr(s string, i int, n int) (string, int) – Vrátí podřetězec
+  zadaného řetězce 𝑠. Druhým parametrem 𝑖 je dán začátek požadovaného podřetězce
+  (počítáno od nuly) a třetí parametr 𝑛 určuje délku podřetězce. Je-li index 𝑖 mimo
+  meze 0 až len(s) nebo 𝑛 < 0, vrací funkce v příznaku chyby hodnotu 1. Je-li 𝑛 >
+  len(s)−𝑖, jsou jako řetězec vráceny od 𝑖-tého znaku všechny zbývající znaky řetězce
+ */
+void generateSubstr();

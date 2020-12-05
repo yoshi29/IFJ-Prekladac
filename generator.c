@@ -22,7 +22,6 @@ void printCode(int num, ...) {
 	}
 	va_end(args);
 	fprintf(stdout, "\n");
-
 }
 
 void printInstr(char* instruction) {
@@ -47,7 +46,7 @@ void generateFuncStart(char* funcName) {
 
 void generateFuncEnd(char* funcName) {
 	if (strcmp(funcName, "main") != 0) {
-		printCode(2, "POPFRAME", " # ---------- End of function");
+		printCode(3, "POPFRAME", " # ---------- End of function ", funcName);
 		printInstr("RETURN");
 	}
 }
@@ -133,8 +132,6 @@ void generateFuncCall(char* funcName) {
 		printCode(4, "CALL $$", funcName, " # ---------- Calling function ", funcName);
 	else 
 		printCode(4, "CALL $", funcName, " # ---------- Calling function ", funcName);
-
-
 }
 
 void generateVariable(char* name, int suffix, int valueSuffix) {
@@ -245,4 +242,102 @@ void generateForFrame(bool start) {
 
 	if (start)
 		printInstr("PUSHFRAME");
+}
+
+/* ------------------------------------------------------------------------------- */
+
+void generateBuiltInFunctions() {
+	generateInt2Float();
+	generateFloat2Int();
+	generateLen();
+	generateSubstr();
+}
+
+void generateInt2Float() {
+	generateFuncStart("int2float");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"INT2FLOAT LF@%retval1 LF@%1"
+	);
+	generateFuncEnd("int2float");
+}
+
+void generateFloat2Int() {
+	generateFuncStart("float2int");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"FLOAT2INT LF@%retval1 LF@%1"
+	);
+	generateFuncEnd("float2int");
+}
+
+void generateLen() {
+	generateFuncStart("len");
+	printInstr(
+		"DEFVAR LF@%retval1\n"
+		"STRLEN LF@%retval1 LF@%1"
+	);
+	generateFuncEnd("len");
+}
+
+void generateSubstr() {
+	generateFuncStart("substr");
+	printInstr( //LF@%1 - s string, LF@%2 - i int, LF@%2 - n int
+		"DEFVAR LF@%retval1\n"
+		"MOVE LF@%retval1 string@\n"
+
+		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
+
+		"CREATEFRAME\n" 
+		"DEFVAR TF@%1\n"
+		"MOVE TF@%1 LF@%1\n"
+		"CALL $len\n"
+		"DEFVAR LF@%string_length\n"
+		"MOVE LF@%string_length TF@%retval1\n" //string_length = délka řetězce s
+
+		"SUB LF@%string_length LF@%string_length int@1\n" //-1 => Korekce počítání od 0 kvůli i
+		
+		"DEFVAR LF@%err\n"
+		"LT LF@%err LF@%2 int@0\n"
+		"JUMPIFEQ $err LF@%err bool@true\n"  //je-li i < 0 => chyba
+		"LT LF@%err LF@%3 int@0\n" 
+		"JUMPIFEQ $err LF@%err bool@true\n" //je-li n < 0 => chyba
+		"GT LF@%err LF@%2 LF@%string_length\n" 
+		"JUMPIFEQ $err LF@%err bool@true\n" //je-li i > len(s)-1 => chyba (i > maximální povolený index)
+
+		"DEFVAR LF@%set_n_max\n" 
+		"DEFVAR LF@%diff\n" 
+		"SUB LF@%diff LF@%string_length LF@%2\n" //diff = len(s)-i
+		"ADD LF@%diff LF@%diff int@1\n" //Zpětná korekce +1
+		"GT LF@%set_n_max LF@%3 LF@%diff\n"
+		"JUMPIFNEQ $not_max LF@%set_n_max bool@true\n" //není-li n > len(s)-i => NEnastavit n na max
+		"MOVE LF@%3 LF@%diff\n" //n = diff
+
+		"LABEL $not_max\n"
+
+		"DEFVAR LF@%tmp\n" //Pomocná proměnná pro getchar
+		"MOVE LF@%tmp string@\n"
+		"DEFVAR LF@%end\n"
+
+		"ADD LF@%3 LF@%3 LF@%2\n" 
+		"SUB LF@%3 LF@%3 int@1\n" //n = n+i-1 ... index posledního znaku vraceného řetězce
+
+		"GT LF@%end LF@%2 LF@%3\n" //je-li i > n => konec
+		"JUMPIFEQ $end LF@%end bool@true\n" //n = 0
+
+		"LABEL $loop_start\n"
+		"GETCHAR LF@%tmp LF@%1 LF@%2\n"
+		"CONCAT LF@%retval1 LF@%retval1 LF@%tmp\n"
+		"ADD LF@%2 LF@%2 int@1\n" //i++
+		"GT LF@%end LF@%2 LF@%3\n" //je-li i > n => konec
+		"JUMPIFNEQ $loop_start LF@%end bool@true\n"
+		"JUMP $end\n"
+
+		"LABEL $err\n" //chyba
+		"MOVE LF@%retval2 int@1\n"
+
+		"LABEL $end\n"
+	);	
+	generateFuncEnd("substr");
 }
