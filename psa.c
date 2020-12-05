@@ -436,7 +436,7 @@ int reduce(PSA_Stack *s, int rule)
 
             current->node_type = node->type;
             
-            if (node->param != 0) // Jedná se o parametr fukce
+            if (node->param != 0) // Jedná se o parametr funkce
             {
                 char param_num[getStrSize(node->param)];
                 sprintf(param_num, "%d", node->param);

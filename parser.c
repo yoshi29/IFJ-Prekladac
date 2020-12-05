@@ -53,8 +53,7 @@ int parse(FILE* file) {
 
     TStackInit(&stack);
     PushFrame(&stack); // Vloží se nový prvek do zásobníku a nastaví se mu hodnoty
-    //stack.top->node = symTable->root;
-    //stack.top->next = NULL;
+    stack.bottom = stack.top;
     insert_built_in_funcs();
 
     token = malloc(sizeof(Token));
@@ -71,11 +70,7 @@ int parse(FILE* file) {
 }
 
 void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně v tabulkce symbolů bude
-    TStack_Elem* stackBottom = malloc(sizeof(struct tStack_elem));
-    stack.bottom = stackBottom;
-    stack.bottom->node = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
-    stack.bottom->node->retTypes = NULL;
-    
+    TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL)->retTypes, 2, INT, INT);
     addMultipleRetType(&TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL)->retTypes, 2, FLOAT, INT);
@@ -381,7 +376,8 @@ int body() { //DONE ^^
 
 int return_f() { //DONE ^^
     int rParamCnt = 0; //Počítadlo návratových hodnot
-    if (return_val(&rParamCnt) == SUCCESS) {
+    int retVal = return_val(&rParamCnt);
+    if (retVal == SUCCESS) {
         if (token->type == EOL_T) {
             getNonEolToken();
             //printf("RETURN_F: %i\n", 0);
@@ -392,14 +388,15 @@ int return_f() { //DONE ^^
     }
     else {
         //printf("RETURN_F: %i\n", 2);
-        return ERR_SYNTAX;
+        return retVal;
     }
 }
 
 int return_val(int* retParamCnt) { 
     int data_type, paramCnt; 
     int retVal = psa(&data_type, &paramCnt, retParamCnt, false); //Psa může zvýšit paramCnt
-    if (retVal != SUCCESS) return SUCCESS;
+    if (retVal != SUCCESS) return retVal;
+    if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
     *retParamCnt = *retParamCnt + 1;
     generateRetVal(*retParamCnt, psa_var_cnt);
     retVal = ids_exprs_opt(retParamCnt, true, NULL);
@@ -412,7 +409,8 @@ int if_f() {
     int cnt = ifCnt++;
     int data_type, paramCnt, rParamCnt; //Zde nevyužito
     int retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
-    if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+    if (retVal != SUCCESS) return retVal;
+    if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
     generateIfJump(cnt, psa_var_cnt); // If podmínka
     if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
         PushFrame(&stack); //Začátek těla if
@@ -448,7 +446,8 @@ int for_f() {
         getToken();
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, true);
-        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+        if (retVal != SUCCESS) return retVal;
+        if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
         generateForJump(cnt, psa_var_cnt); // For podmínka
         generateJump("for-body", cnt);
         generateLabel("for-assign", cnt);
@@ -506,6 +505,7 @@ int def_var(char* idName) {
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false);
         if (retVal == -1) retVal = ERR_SYNTAX;
+        if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
         TSInsertOrExitOnDuplicity(&(stack.top->node), idName, data_type, true, 0, NULL);
 
         generateVariable(idName, stack.top->scope, psa_var_cnt); //-- Vygenerování definice proměnné
@@ -657,7 +657,8 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     int funcParamCnt = 0; //Počítadlo pro případné parametry funkce
     int rParamCnt = 1; //Začínají se počítat parametry pravé strany přiřazení, u volání funkce zde bude počet návratových hodnot
     int retVal = psa(&data_type, &funcParamCnt, &rParamCnt, true);
-    if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+    if (retVal != SUCCESS) return retVal;
+    if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
 
     if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
        int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
@@ -692,7 +693,8 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
             int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
             if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
         }
-        if (retVal == -1 || retVal == ERR_SYNTAX) return ERR_SYNTAX;
+        if (retVal != SUCCESS) return retVal;
+        if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
         *rParamCnt = *rParamCnt + 1; 
         if (isReturn) generateRetVal(*rParamCnt, psa_var_cnt);
         retVal = ids_exprs_opt(rParamCnt, isReturn, isUsedList);

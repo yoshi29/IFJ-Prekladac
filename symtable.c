@@ -178,6 +178,7 @@ int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key) {
     while (elem != NULL) {
         if ((node = TSSearch(elem->node, key)) != NULL && node->isDefined == true && node->type != FUNC) {
             scope = elem->scope;
+            break;
         }
         elem = elem->next;
     }

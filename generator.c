@@ -103,7 +103,7 @@ void generateParamPass(int paramPos, Token* token) {
 
 	printCode(2, "DEFVAR TF@%", pos);
 	if (token->type == FLOAT_T) {
-		char floatStr[getStrSize(token->floatNumber)];
+		char floatStr[30];
 		sprintf(floatStr, "%a", token->floatNumber);
 		printCode(5, "MOVE TF@%", pos, " ", "float@", floatStr);
 	}
@@ -120,7 +120,7 @@ void generateParamPass(int paramPos, Token* token) {
 		TNode* idNode = TSSearchStackAndReturn(stack.top, token->string.str, &scope);
 		char scopeStr[getStrSize(scope)];
 		sprintf(scopeStr, "%i", scope);
-		printCode(6, "MOVE TF@%", pos, " ", "LF@%", idNode->key, scopeStr);
+		printCode(6, "MOVE TF@%", pos, " ", "LF@", idNode->key, scopeStr);
 	}
 	else { //Načten nesprávný token
 		print_err(ERR_SYNTAX);
