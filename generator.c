@@ -33,6 +33,10 @@ void generateHeader() {
 	printInstr("JUMP $$main");
 }
 
+void generateExit() {
+	printInstr("LABEL $$main-exit");
+}
+
 void generateFuncStart(char* funcName) {
 	if (strcmp(funcName, "main") == 0) {
 		printCode(4, "LABEL $$", funcName, " # ---------- Start of function ", funcName);
@@ -48,6 +52,9 @@ void generateFuncEnd(char* funcName) {
 	if (strcmp(funcName, "main") != 0) {
 		printCode(3, "POPFRAME", " # ---------- End of function ", funcName);
 		printInstr("RETURN");
+	}
+	else {
+		printInstr("JUMP $$main-exit");
 	}
 }
 
