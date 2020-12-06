@@ -228,12 +228,24 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
     }
 }
 
-void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* rParamCnt) {
+void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* rParamCnt, IsUsedList* isUsedList, RetType* retType, bool def) {
     TNode* funcNode = TSSearch(stackElem->node, key);
 
     if (funcNode == NULL) { //Funkce zatím nebyla definována
-        TSInsert(&(stackElem->node), key, FUNC, false, param, localTS);
+        TNode *funcNode = TSInsert(&(stackElem->node), key, FUNC, def, param, localTS);
         //TODO: Ještě uložit, že zatím neznáme počet návratových parametrů, anebo pak nějak přiřadit lParamCnt a porovnávat při definici funkce?
+
+        // Pokud se jedná o definici funkce
+        if (def && retType != NULL) { 
+            funcNode->retTypes = retType; // Přiřazení návratových typů
+        }
+
+        // Pokud se nejedná o definici funkce
+        while (!def && isUsedList != NULL) { 
+            addRetType(&(funcNode->retTypes), isUsedList->type); // Přidáme do TS očekávané návratové hodnoty
+            isUsedList = isUsedList->next;
+        }
+        *rParamCnt = countRetTypes(funcNode);
     }
     else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
         if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
@@ -245,6 +257,39 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
             exit(ERR_SEM_FUNC);
         }
         else {
+            if (!def) { // Pokud se nejedná o definici funkce
+                RetType *current = funcNode->retTypes;
+                while (isUsedList != NULL && current != NULL) {
+                    if (isUsedList->type != current->type) {
+                        print_err(ERR_SEM_FUNC);
+                        exit(ERR_SEM_FUNC);
+                    }
+                    isUsedList = isUsedList->next;
+                    current = current->next;
+                }
+                if (isUsedList != NULL || current != NULL) { // Musí sedět počet návratových hodnot
+                    print_err(ERR_SEM_FUNC);
+                    exit(ERR_SEM_FUNC);
+                }
+            }
+            else { // Pokud se jedná o definici funkce
+                RetType* current1 = retType;
+                RetType* current2 = funcNode->retTypes;
+                while (current1 != NULL && current2 != NULL) {
+                    if (current1->type != current2->type) {
+                        print_err(ERR_SEM_FUNC);
+                        exit(ERR_SEM_FUNC);
+                    }
+                    current1 = current1->next;
+                    current2 = current2->next;
+                }
+                if (current1 != NULL || current2 != NULL) { // Musí sedět počet návratových hodnot
+                    print_err(ERR_SEM_FUNC);
+                    exit(ERR_SEM_FUNC);
+                }
+
+                funcNode->isDefined = true;
+            }
             *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
             //printf("-------- funcRetParamCnt %i\n", *rParamCnt);
         }

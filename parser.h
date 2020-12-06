@@ -7,24 +7,13 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#include "nodetype.h"
 #include "error.h"
 #include "symtable.h"
 #include "scanner.h"
 #include "psa.h"
 #include "generator.h"
-
-
-typedef struct isUsedList {
-    int pos;
-    bool isUsed;
-    nodeType type;
-    char* varName;
-    struct isUsedList *next;
-} IsUsedList;
-
-void addPos(IsUsedList* isUsedList, bool isUsed, nodeType type, char* varName);
-void isUsedListSetVarName(IsUsedList* isUsedList, char* varName);
-void isUsedListDispose(IsUsedList* isUsedList);
+#include "isusedlist.h"
 
 /**
  * Hlavní funkce syntaktického analyzátoru
@@ -100,22 +89,26 @@ int formal_params_opt(int* paramCount, TNode** localTS);
  * Pravidlo <f_types> → ( <types> )
  * Pravidlo <f_types> → ε
  * @param isMain 1 pokud se jedná o funkci main, 0 jinak
+ * @param retType Adresa ukazatele na strukturu RetType, kam se mají uložit návratové typy
  */
-int func_ret_types(int isMain);
+int func_ret_types(int isMain, RetType** retType);
 
 /**
  * Datový typ, případně další oddělené čárkou
  * Pravidlo <types> → <type> <types_o>
  * @param isMain 1 pokud se jedná o funkci main, 0 jinak
+ * @param retType Adresa ukazatele na strukturu RetType, kam se mají uložit návratové typy
  */
-int types(int isMain);
+int types(int isMain, RetType** retType);
 
 /**
  * Nepovinné další datové typy
  * Pravidlo <types_o> → , <type> <types_o>
  * Pravidlo <types_o> → ε
+ * @param cnt Adresa čísla, kam se má uložit počet návratových typů
+ * @param retType Adresa ukazatele na strukturu RetType, kam se mají uložit návratové typy
  */
-int types_opt();
+int types_opt(int* cnt, RetType** retType);
 
 
 /**
@@ -216,8 +209,9 @@ int ids_l(IsUsedList* isUsedList);
  * @param retParamCnt Počítadlo parametrů pravé strany přiřazení
  * @param paramCnt Počítadlo parametrů funkce
  * @param funcName Jméno funkce
+ * @param isUsedList Ukazatele na strukturu IsUsedList, kde jsou uloženy identifikátory levé strany
  */
-int func(int* retParamCnt, int* paramCnt, char* funcName);
+int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList);
 
 /**
  * Parametry funkce

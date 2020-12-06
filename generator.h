@@ -37,6 +37,11 @@ void printInstr(char* instruction);
 void generateHeader();
 
 /*
+ * Vygeneruje návěští konce
+ */
+void generateExit();
+
+/*
  * Vygeneruje začátek funkce
  * @param funcName Jméno funkce
  */

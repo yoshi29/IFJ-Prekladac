@@ -15,6 +15,8 @@
 #include "parser.h"
 #include "psa_stack.h"
 #include "generator.h"
+#include "nodetype.h"
+#include "isusedlist.h"
 
 #define PSA_TABLE_SIZE 7
 
@@ -49,9 +51,10 @@ typedef enum {
  * @param paramCnt Ukazatel na int, kam se má uložit 1 v případě, že byla načtena funkce
  * @param paramCnt Ukazatel na int, kam se má uložit 0 v případě, že byla načtena funkce, hodnotu rParamCnt má nastavit jiná funkce
  * @param parseFunc Má se zpracovat volání funkce, anebo ne a vracet ERR_SYNTAX
+ * @param isUsedList Ukazatele na strukturu IsUsedList, kde jsou uloženy identifikátory levé strany
  * @return Vrací 0 při úspěchu, -1 při chybějícím výrazu, 1-99 v případě chyby
  */
-int psa(int* data_type, int* paramCnt, int* rParamCnt, bool parseFunc);
+int psa(int* data_type, int* paramCnt, int* rParamCnt, bool parseFunc, IsUsedList* isUsedList);
 
 /**
  * Zjistí, zda daný token je operátor

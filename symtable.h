@@ -11,23 +11,13 @@
 #include "string.h"
 #include "stdarg.h"
 
+#include "nodetype.h"
 #include "error.h"
 #include "str.h"
+#include "isusedlist.h"
 
 extern struct tStack stack;
 extern struct tNode* currentFuncNode;
-
-/*
- * Typ identifikátoru
- */
-typedef enum {
-    /*0*/ INT,
-    /*1*/ FLOAT,
-    /*2*/ STRING,
-    /*3*/ FUNC,
-    /*4*/ BOOL,
-    /*5*/ UNKNOWN
-} nodeType;
 
 /**
  * Uzel binárího stromu - prvek tabulky symbolů
@@ -186,8 +176,11 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc);
  * @param param Počet parametrů funkce Mají/Nemají se do kontroly zahrnovat prvky, jejichž typ je FUNC
  * @param localTS Lokální tabulka symbolů
  * @param retValCnt Ukazatel, přes který se vrací počet návratových hodnot
+ * @param isUsedList Ukazatele na strukturu IsUsedList, kde jsou uloženy identifikátory levé strany
+ * @param retType Ukazatele na strukturu retType, kde jsou uloženy návratové typy funkce
+ * @param def true, pokud se jedná o definici funkce, jinak false
  */
-void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* retValCnt);
+void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* retValCnt, IsUsedList* isUsedList, RetType* retType, bool def);
 
 /**
  * Porovná dvě tabulky symbolů (param, nodeType)
