@@ -70,10 +70,9 @@ typedef enum {
     /*23*/ EQUALS,
     /*24*/ COMMA,
     /*25*/ SEMICOLON,
-    /*26*/ ASSIGN,
-    /*27*/ DEF,
-    /*28*/ EOL_T,
-    /*29*/ EOF_T,
+    /*26*/ DEF,
+    /*27*/ EOL_T,
+    /*28*/ EOF_T,
 } tokenType;
 
 /**
