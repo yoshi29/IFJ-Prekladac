@@ -17,11 +17,13 @@
 typedef struct isUsedList {
     int pos;
     bool isUsed;
+    nodeType type;
     char* varName;
     struct isUsedList *next;
 } IsUsedList;
 
-void addPos(IsUsedList* isUsedList, bool isUsed, char* varName);
+void addPos(IsUsedList* isUsedList, bool isUsed, nodeType type, char* varName);
+void isUsedListSetVarName(IsUsedList* isUsedList, char* varName);
 void isUsedListDispose(IsUsedList* isUsedList);
 
 /**

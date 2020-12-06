@@ -25,7 +25,7 @@ Token* getNonEolToken() {
     return token;
 }
 
-void addPos(IsUsedList *isUsedList, bool isUsed, char* varName) {
+void addPos(IsUsedList *isUsedList, bool isUsed, nodeType type, char* varName) {
     IsUsedList* current = isUsedList;
     while (current->next != NULL){
         current = current->next;
@@ -34,14 +34,21 @@ void addPos(IsUsedList *isUsedList, bool isUsed, char* varName) {
     current->next = malloc(sizeof(struct isUsedList));
     current->next->pos = current->pos + 1;
     current->next->isUsed = isUsed;
+    current->next->type = type;
     current->next->varName = malloc(strlen(varName) + 1);
     strcpy(current->next->varName, varName);
     current->next->next = NULL;
 }
 
+void isUsedListSetVarName(IsUsedList* isUsedList, char* varName) {
+    isUsedList->varName = malloc(strlen(varName) + 1);
+    strcpy(isUsedList->varName, varName);
+}
+
 void isUsedListDispose(IsUsedList* isUsedList) {
     if (isUsedList != NULL) {
-        free(isUsedList->varName);
+        if (isUsedList->varName != NULL)
+            free(isUsedList->varName);
         isUsedListDispose(isUsedList->next);
         free(isUsedList);
     }
@@ -344,8 +351,16 @@ int body() { //DONE ^^
             strInit(&idName);
             strCopyString(&idName, &(token->string));
 
+            int tmpVar;
+            TNode *var = TSSearchStackAndReturn(stack.top, idName.str, &tmpVar);
+            if (var != NULL)
+                isUsedList->type = var->type;
+            else
+                isUsedList->type = UNKNOWN;
+
             isUsedList->isUsed = true;
-            isUsedList->varName = idName.str;
+            isUsedListSetVarName(isUsedList, idName.str);
+            
 
             getToken();
             retVal = after_id(idName.str, &lParamCnt, isUsedList);
@@ -357,7 +372,8 @@ int body() { //DONE ^^
         }
         else { //<body> → _ <ids_lo> = <assign_r> EOL <body>
             isUsedList->isUsed = false;
-            isUsedList->varName = "";
+            isUsedListSetVarName(isUsedList, "");
+            isUsedList->type = UNKNOWN;
 
             getToken();
             retVal = ids_l_opt(&lParamCnt, isUsedList);
@@ -370,6 +386,7 @@ int body() { //DONE ^^
             getNonEolToken();
             retVal = body();
         }
+        isUsedListDispose(isUsedList);
     }
 
     //printf("BODY: %i\n", retVal);
@@ -549,14 +566,21 @@ int ids_l(IsUsedList *isUsedList) {
         string idName;
         strInit(&idName);
         strCopyString(&idName, &(token->string));
-        addPos(isUsedList, true, idName.str);
+
+        int tmpVar;
+        TNode *var = TSSearchStackAndReturn(stack.top, idName.str, &tmpVar);
+        if (var != NULL)
+            addPos(isUsedList, true, var->type, idName.str);
+        else
+            addPos(isUsedList, true, UNKNOWN, idName.str);
+
         strFree(&idName);
         getToken();
         TSExitIfNotDefined(stack.top, token->string.str, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
         return SUCCESS;
     }
     else if (token->type == UNDERSCORE) {
-        addPos(isUsedList, false, "");
+        addPos(isUsedList, false, UNKNOWN, "");
         getToken();
         return SUCCESS;
     }
@@ -663,34 +687,45 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     int funcParamCnt = -1; //Počítadlo pro případné parametry funkce, pokud zůstane -1, nejedná se o volání funkce
     int rParamCnt = 1; //Začínají se počítat parametry pravé strany přiřazení, u volání funkce zde bude počet návratových hodnot
     int retVal = psa(&data_type, &funcParamCnt, &rParamCnt, true);
+    if (retVal == -1) return ERR_SYNTAX;
     if (retVal != SUCCESS) return retVal;
     if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
 
     if (funcParamCnt != -1) { //Následuje přiřazování hodnot vrácených z funkce
         for (int i = 1; i < rParamCnt+1; i++) { //i = 1, rParamCnt+1 protože proměnné s návratovými hodnotami jsou číslovány od 1
             if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+                // TODO: Kontrola typů u funkce
                 int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
                 if (scope != -1) generateRetValAssignment(isUsedList->varName, scope, i);
             }
+            else
+                return ERR_SEM_OTHER;
             isUsedList = isUsedList->next;
         }
     }
     else {
         if (isUsedList != NULL && isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+            if (isUsedList->type == UNKNOWN || isUsedList->type != (nodeType)data_type)
+                return ERR_SEM_COMP;
             int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
             if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
         }
+        else if (isUsedList == NULL) {
+            return ERR_SEM_OTHER;
+        }
     }
-
+    
     if (funcParamCnt != -1 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
     retVal = ids_exprs_opt(&rParamCnt, false, isUsedList); //Počítání dalších možných ID na pravé straně přiřazení
     //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
+    
+    if (retVal == -1) return ERR_SYNTAX;
     if (retVal != SUCCESS) return retVal;
     if (*lParamCnt != rParamCnt) {
-        if (funcParamCnt != 0) return ERR_SEM_FUNC;
+        if (funcParamCnt != 0) return ERR_SEM_OTHER;
         else return ERR_SEM_OTHER;
     }
-    isUsedListDispose(isUsedList);
+    
     return retVal;
 }
 
@@ -704,10 +739,14 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
         retVal = psa(&data_type, &paramCnt, rParamCnt, false);
 
         if (paramCnt != -1) return ERR_SYNTAX; //Přiřazení výstupu funkce může být pouze v případě, že je na pravé straně volání funkce jako jediné (zde by bylo 2. v pořadí)
-        
+
         if (isUsedList != NULL) { //NULL bude v případě, že jsme v return části
             isUsedList = isUsedList->next;
+            if (isUsedList == NULL)
+                return ERR_SEM_OTHER;
             if (isUsedList->isUsed == true) { //Aktuální hodnota má být přiřazena
+                if (isUsedList->type == UNKNOWN || isUsedList->type != (nodeType)data_type)
+                    return ERR_SEM_OTHER;
                 int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
                 if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt);
             }
@@ -737,12 +776,21 @@ int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, z
 
         if (token->type == ID) {
             TSExitIfNotDefined(stack.top, token->string.str, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
+            
+            int tmpVar;
+            TNode *var = TSSearchStackAndReturn(stack.top, idName.str, &tmpVar);
+            if (var != NULL)
+                isUsedList->type = var->type;
+            else
+                isUsedList->type = UNKNOWN;
+
             isUsedList->isUsed = true;
-            isUsedList->varName = idName.str;
+            isUsedListSetVarName(isUsedList, idName.str);
         }
         else {
+            isUsedList->type = UNKNOWN;
             isUsedList->isUsed = false;
-            isUsedList->varName = "";
+            isUsedListSetVarName(isUsedList, "");
         }
         getToken();
         int lParamCnt = 1;
@@ -753,6 +801,7 @@ int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, z
             retVal = assign_r(&lParamCnt, isUsedList);
         }
         strFree(&idName);
+        isUsedListDispose(isUsedList);
     }
     return retVal;
 }

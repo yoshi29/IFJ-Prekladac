@@ -25,7 +25,8 @@ typedef enum {
     /*1*/ FLOAT,
     /*2*/ STRING,
     /*3*/ FUNC,
-    /*4*/ BOOL
+    /*4*/ BOOL,
+    /*5*/ UNKNOWN
 } nodeType;
 
 /**
