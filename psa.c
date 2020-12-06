@@ -19,7 +19,7 @@ static int psa_table[PSA_TABLE_SIZE][PSA_TABLE_SIZE] =
         { S , S , S , S , X , S , X }   // $
 };
 
-int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc)
+int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc, IsUsedList* isUsedList)
 {
     int retVal = SUCCESS;
 
@@ -126,7 +126,7 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc)
         {
             if (parseFunc == false) return ERR_SYNTAX;
             check_function = 0;
-            retVal = func(retParamCnt, paramCnt, funcName.str);
+            retVal = func(retParamCnt, paramCnt, funcName.str, isUsedList);
             // TODO: Generování kódu
             break;
         }
