@@ -12,7 +12,6 @@
 #include "stdint.h"
 
 #include "error.h"
-#include "scanner.h"
 #include "str.h"
 
 extern struct token *token;
