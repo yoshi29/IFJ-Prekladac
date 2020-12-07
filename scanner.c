@@ -16,7 +16,12 @@ int state = START_STATE;
 void getSourceCode(FILE *code){
     sourceCode = code;
 }
-
+/**
+ * @brief Načte další token a předá informace o něm funkci NewToken
+ * 
+ * @return celočíselná hodnota určující zda funkce proběhla správně nebo pokud došlo k 
+ * jedné z chyb definovaných v err.h, tak k jaké 
+ */
 int getNextToken(){
 
     if (sourceCode == NULL)
@@ -383,7 +388,7 @@ int getNextToken(){
 }
 
 /**
- * @brief načítá nový token ze zdrojového kódu
+ * @brief uloží token do struktury Token
  * 
  * @param type typ nečteného tokenu
  * @param s řetězec znaků s obsahem tokenu
