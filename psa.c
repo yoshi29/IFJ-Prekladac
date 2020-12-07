@@ -144,8 +144,6 @@ int psa(int *data_type, int *paramCnt, int *retParamCnt, bool parseFunc, IsUsedL
     return retVal;
 }
 
-// Zatím pouze kontroluje sémantiku
-// Možná bude lepší sloučit s find_rule()
 int reduce(PSA_Stack *s, int rule)
 {
     PSA_Stack_Elem *current = stack_top(s);
@@ -597,22 +595,6 @@ int find_rule(PSA_Stack_Elem *start, PSA_Stack_Elem *end)
         end = end->nextPtr;
     }
     return result;
-}
-
-// Zatím k ničemu
-int is_operator(Token *token)
-{
-    if (token != NULL)
-    {
-        switch (token->type)
-        {
-        case EQ_T: case NE_T: case GT_T: case LT_T: case GE_T: case LE_T: case PLUS: case MINUS: case MUL: case DIV:
-            return 1;
-        default:
-            break;
-        }
-    }
-    return 0;
 }
 
 int is_delimiter(Token *token)
