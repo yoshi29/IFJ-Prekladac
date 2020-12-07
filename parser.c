@@ -419,7 +419,7 @@ int return_f() { //DONE ^^
     RetType *retType = NULL;
 
     int retVal = return_val(&rParamCnt, &retType);
-    if (retVal == SUCCESS) {
+    if (retVal == SUCCESS || retVal == -1) {
         if (token->type == EOL_T) {
             // Kontrola datových typů u 'return' oproti definici funkce
             RetType* funcRetTypes = currentFuncNode->retTypes;
