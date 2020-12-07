@@ -35,8 +35,8 @@ int getNextToken(){
                 else if (c == '{') token->type = LC_BRACKET;
                 else if (c == '}') token->type = RC_BRACKET;
                 else if (c == ';') token->type = SEMICOLON;
-                else if (c == '+') token->type = PLUS; 
-                else if (c == '-') token->type = MINUS; 
+                else if (c == '+') token->type = PLUS;
+                else if (c == '-') token->type = MINUS;
                 else if (c == '*') token->type = MUL;
                 else if (c == ',') token->type = COMMA;
                 else if (c == '/') state = COMMENT_STATE;
@@ -46,11 +46,15 @@ int getNextToken(){
                 else if (c == '=') state = EQ_T_STATE;
                 else if (c == '!') state = NE_T_STATE;
                 else if (c == '"') state = STRING_STATE;
+                else if (c == '_') {
+                    strAddChar(&s, c);
+                    state = UNDERSCORE_STATE;
+                }
                 else if (isspace(c)) {
                     if (c == '\n') token->type = EOL_T;
                     else continue; //Přeskočení mezery
                 }
-                else if (isalpha(c) || c == '_') {
+                else if (isalpha(c)) {
                     strAddChar(&s, c);
                     c_prev = c;
                     state = TEXT_STATE;
@@ -258,15 +262,22 @@ int getNextToken(){
                 }
             break;
 
+            case UNDERSCORE_STATE:
+                if (isalpha(c) || isdigit(c) || c == '_') {
+                    strAddChar(&s, c);
+                    state = TEXT_STATE;
+                }
+                else {
+                    ungetc(c, sourceCode);
+                    token->type = UNDERSCORE;
+                    state = START_STATE;
+                }
+            break;
+
             case TEXT_STATE: // f2
                 if (isalpha(c) || isdigit(c) || c == '_') {
                     c_prev = '\0';
                     strAddChar(&s, c);
-                }
-                else if (c_prev == '_') {
-                    token->type = UNDERSCORE;
-                    state = START_STATE;
-                    ungetc(c, sourceCode);
                 }
                 else {
                     if (strCmpConstStr(&s, "else") == 0 || strCmpConstStr(&s, "for") == 0 || strCmpConstStr(&s, "func") == 0 ||
