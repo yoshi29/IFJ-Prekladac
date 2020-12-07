@@ -1,6 +1,7 @@
 /**
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Tomáš Matušák, xmatus34
+ *        Filip Vágner, xvagne08
  */
 #include "scanner.h"
 

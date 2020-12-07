@@ -70,12 +70,6 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
-TNode* TSSearchByNameAndParam(TNode* root, char* funcName, int paramPos) {
-    TNode* node = TSSearch(root, funcName);
-    if (node == NULL) return NULL;
-    return TSSearchByParam(node->localTS, paramPos);
-}
-
 TNode* TSSearchByParam(TNode* root, int paramPos) {
     if (root == NULL) return NULL;
 
@@ -189,21 +183,6 @@ int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key) {
     }
     return scope;
 }
-
-/*
-int TSSearchInLocalTS(TNode* node, char* key) {
-    if (node != NULL) {
-        if (node->localTS != NULL) {
-            if (TSSearch(node->localTS, key) != NULL) return 1;
-            else return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
-        }
-        else {
-            return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
-        }
-    }
-    else return 0;
-}
-*/
 
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice
