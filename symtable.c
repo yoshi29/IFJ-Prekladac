@@ -208,7 +208,7 @@ int TSSearchInLocalTS(TNode* node, char* key) {
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice
         print_err(ERR_SEM_DEF);
-        exit(ERR_SEM_DEF); //TODO: Hned exit, anebo vracet hodnotu a všude to kontrolovat?
+        exit(ERR_SEM_DEF);
     }
     else TSInsert(root, key, type, isDefined, param, localTS);
 }

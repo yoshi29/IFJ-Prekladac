@@ -130,9 +130,8 @@ int return_f();
 
 /**
  * Vrácení hodnoty
- * Pravidlo <return_v> → ε 
- * Pravidlo <return_v> → id <ids_o>
- * Pravidlo <return_v> → <expr> <exprs_o>
+ * Pravidlo <return_v> → <id_expr> <ids_exprs_o>
+ * Pravidlo <return_v> → ε
  * @param rParamCnt Počítadlo návratových hodnot
  * @param retType Adresa ukazatele na strukturu RetType, kam se mají uložit datové typy
  */
@@ -140,6 +139,7 @@ int return_val(int* retParamCnt, RetType** retType);
 
 /*
  * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení, nebo při vracení hodnot
+ * Pravidlo <ids_exprs_o> → , <id_expr> <ids_exprs_o>
  */
 int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList, RetType** retType);
 
@@ -170,8 +170,7 @@ int def();
 
 /**
  * Definice proměnné
- * Pravidlo <def_var> → ε
- * Pravidlo <def> → id <def_var>
+ * Pravidlo <def_var> → := <id_expr>
  * @param idName Název ID, které se aktuálně definuje
  */
 int def_var(char* idName);
@@ -180,7 +179,7 @@ int def_var(char* idName);
  * Neterminály, které mohou následovat za id v těle funkce
  * Pravidlo <after_id> → <func>
  * Pravidlo <after_id> → <def_var>
- * Pravidlo <after_id> → <ids_lo>
+ * Pravidlo <after_id> → <ids_lo> = <assign_r>
  * @param idName Název ID, které předcházelo
  * @param lParamCnt Počítadlo parametrů levé strany přiřazení
  * @param isUsedList List pozic levé strany přiřazení obsahující a informaci o tom, zda budou využity
@@ -217,7 +216,7 @@ int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList
 /**
  * Parametry funkce
  * Pravidlo <params> → ε
- * Pravidlo <params> → id <params_o>
+ * Pravidlo <params> → <id_literal> <params_o>
  * @param paramCnt Počítadlo parametrů funkce
  * @param localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
  * @param Jméno funkce, o jejíž parametry se jedná
@@ -227,7 +226,7 @@ int params(int* paramCnt, TNode** localTS, char* funcName);
 /**
  * Nepovinné další identifikátory
  * Pravidlo <params_o> → ε
- * Pravidlo <params_o> → , id <params_o>
+ * Pravidlo <params_o> → , <id_literal> <params_o>
  * @param paramCnt Počítadlo parametrů funkce
  * @paral localTS Ukazatel na ukazatel na lokální tabulku symbolů, do které se budou parametry ukládat
  * @param Jméno funkce, o jejíž parametry se jedná
@@ -236,8 +235,8 @@ int params_opt(int* paramCnt, TNode** localTS, char* funcName);
 
 /**
  * Pravá strana přiřazení
- * Pravidlo <assign_r> → <expr> <exprs_o>
- * Pravidlo <assign_r> → id <func>
+ * Pravidlo <assign_r> → <expr> <ids_exprs_o>
+ * Pravidlo <assign_r> → <id_literal> <func_ids_exprs_o>
  */
 int assign_r(int* lParamCnt, IsUsedList* isUsedList);
 

@@ -50,11 +50,11 @@ int parse(FILE* file) {
     return retVal;
 }
 
-void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně v tabulkce symbolů bude
+void insert_built_in_funcs() {
     TNode *func = NULL;
 
     // func print(term1, term2, ... , termN)
-    func = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
+    func = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL);
     
     // func inputs() (string, int)
     func = TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL);
@@ -104,7 +104,7 @@ void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně 
     generateBuiltInFunctions();
 }
 
-void checkFunctionDefinition() { //TODO: Možná ještě bude potřeba otestovat, až se budou do tabulky symbolů na nejvyšší úroveň přidávat volané funkce
+void checkFunctionDefinition() {
     if (TSAllMeetsConditions(stack.top->node, FUNC, true) == 0) { //Kontrola, zda jsou všechny volané funkce definované
         print_err(ERR_SEM_DEF);
         exit(ERR_SEM_DEF);
@@ -584,7 +584,7 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
     else if (token->type == DEF) { //<after_id> → <def_var>
         retVal = def_var(idName);
     }
-    else { //<after_id> → <ids_lo>
+    else { //<after_id> → <ids_lo> = <assign_r>
         TSExitIfNotDefined(stack.top, idName, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
         /*if (token->type == ID) addPos(isUsedList, true, idName);
         else if (token->type == UNDERSCORE) addPos(isUsedList, false, "");*/
@@ -646,7 +646,7 @@ int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList
     if (token->type == L_BRACKET) {
         *paramCnt = 0;
         getNonEolToken(); //za závorkou možný EOL
-        generateBeforeParamPass(); //TODO: Nebude tu navíc, pokud bude funkce bez parametrů?
+        generateBeforeParamPass();
         retVal = params(paramCnt, &localTS, funcName);
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
         //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
@@ -744,7 +744,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
             if (isUsedList->type == UNKNOWN || isUsedList->type != (nodeType)data_type)
                 return ERR_SEM_COMP;
             int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
-            if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); //TODO: Nebude fungovat pro funkce
+            if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt); 
         }
         else if (isUsedList == NULL) {
             return ERR_SEM_OTHER;
@@ -805,7 +805,7 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList, RetType
     return retVal;
 }
 
-int assign() { //TODO: třeba otestovat kontrolu přiřazování ve for cyklu, zatím netestováno
+int assign() {
     int retVal = SUCCESS;
 
     if (token->type == ID || token->type == UNDERSCORE) {

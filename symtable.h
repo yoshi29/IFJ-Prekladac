@@ -213,8 +213,22 @@ void PopFrame(TStack* stack);
  */
 void TSPrint(TNode* root);
 
+/**
+ * Přidá návratový typ 
+ * @param retType Seznam návratových typů, do kterého se má přidávat
+ * @param type Typ
+ */
 void addRetType(RetType** retType, nodeType type);
 
+/**
+ * Přidá více návratových typů
+ * @param retType Seznam návratových typů, do kterého se má přidávat
+ * @param num Počet přidávaných návratových typů
+ */
 void addMultipleRetType(RetType** retType, int num, ...);
 
+/**
+ * Spočítá návratové typy daného uzlu
+ * @param node Uzel binárního stromu
+ */
 int countRetTypes(TNode* node);

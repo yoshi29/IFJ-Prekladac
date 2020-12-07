@@ -219,4 +219,7 @@ void generateInputi();
  */
 void generateInputf();
 
+/*
+ * Vygeneruje vestavěnou funkci print
+ */
 void generatePrint();
