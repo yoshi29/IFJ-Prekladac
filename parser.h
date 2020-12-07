@@ -134,13 +134,14 @@ int return_f();
  * Pravidlo <return_v> → id <ids_o>
  * Pravidlo <return_v> → <expr> <exprs_o>
  * @param rParamCnt Počítadlo návratových hodnot
+ * @param retType Adresa ukazatele na strukturu RetType, kam se mají uložit datové typy
  */
-int return_val(int* retParamCnt);
+int return_val(int* retParamCnt, RetType** retType);
 
 /*
  * Nepovinné další identifikátory, nebo výrazy na pravé straně přiřazení, nebo při vracení hodnot
  */
-int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList);
+int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList, RetType** retType);
 
 /**
  * If

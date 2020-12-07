@@ -231,81 +231,92 @@ void TSExitIfNotDefined(TStack_Elem* stackElem, char* key, bool canBeFunc) {
 void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* localTS, int* rParamCnt, IsUsedList* isUsedList, RetType* retType, bool def) {
     TNode* funcNode = TSSearch(stackElem->node, key);
 
-    if (funcNode == NULL) { //Funkce zatím nebyla definována
+    if (funcNode == NULL) { // Pokud se na tuto funkci ještě nenarazilo
         TNode *funcNode = TSInsert(&(stackElem->node), key, FUNC, def, param, localTS);
-        //TODO: Ještě uložit, že zatím neznáme počet návratových parametrů, anebo pak nějak přiřadit lParamCnt a porovnávat při definici funkce?
-
-        // Pokud se jedná o definici funkce
-        if (def && retType != NULL) { 
-            funcNode->retTypes = retType; // Přiřazení návratových typů
+     
+        if (def) { // Pokud se jedná o definici funkce
+            if (retType != NULL) {
+                funcNode->retTypes = retType; // Přiřazení návratových typů
+            }
         }
-
-        // Pokud se nejedná o definici funkce
-        while (!def && isUsedList != NULL) { 
-            addRetType(&(funcNode->retTypes), isUsedList->type); // Přidáme do TS očekávané návratové hodnoty
-            isUsedList = isUsedList->next;
+        else { // Pokud se nejedná o definici funkce
+            while (isUsedList != NULL) { 
+                addRetType(&(funcNode->retTypes), isUsedList->type); // Přidáme do TS očekávané návratové hodnoty
+                isUsedList = isUsedList->next;
+            }
+            *rParamCnt = countRetTypes(funcNode);
         }
-        *rParamCnt = countRetTypes(funcNode);
     }
-    else { //Funkce již byla definována, provede se kontrola počtů a typů parametrů
+    else { // Na funkci jsme již narazili
         if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
-        else if (funcNode->param != param || TSCompare(funcNode->localTS, localTS) != 0) {
-            fprintf(stderr, "---------------------- RETVAL: \n");
-
-            //printf("--- ERR_SEMFUNC: funcNode->para: %i, param: %i\n", funcNode->param, param);
+        
+        else if (TSCompare(funcNode->localTS, localTS) == false) {
             print_err(ERR_SEM_FUNC);
             exit(ERR_SEM_FUNC);
         }
-        else {
-            if (!def) { // Pokud se nejedná o definici funkce
-                RetType *current = funcNode->retTypes;
-                while (isUsedList != NULL && current != NULL) {
-                    if (isUsedList->type != current->type) {
-                        print_err(ERR_SEM_FUNC);
-                        exit(ERR_SEM_FUNC);
-                    }
-                    isUsedList = isUsedList->next;
-                    current = current->next;
-                }
-                if (isUsedList != NULL || current != NULL) { // Musí sedět počet návratových hodnot
-                    print_err(ERR_SEM_FUNC);
-                    exit(ERR_SEM_FUNC);
-                }
-            }
-            else { // Pokud se jedná o definici funkce
-                RetType* current1 = retType;
-                RetType* current2 = funcNode->retTypes;
-                while (current1 != NULL && current2 != NULL) {
-                    if (current1->type != current2->type) {
-                        print_err(ERR_SEM_FUNC);
-                        exit(ERR_SEM_FUNC);
-                    }
-                    current1 = current1->next;
-                    current2 = current2->next;
-                }
-                if (current1 != NULL || current2 != NULL) { // Musí sedět počet návratových hodnot
-                    print_err(ERR_SEM_FUNC);
-                    exit(ERR_SEM_FUNC);
-                }
 
-                funcNode->isDefined = true;
+        if (def) { // Pokud se jedná o definici funkce
+            RetType *current1 = retType;
+            RetType *current2 = funcNode->retTypes;
+            while (current1 != NULL && current2 != NULL) {
+                if (current1->type != current2->type) {
+                    if (current2->type == UNKNOWN) {
+                        current2->type = current1->type;
+                    }
+                    else {
+                        print_err(ERR_SEM_FUNC);
+                        exit(ERR_SEM_FUNC);
+                    }
+                }
+                current1 = current1->next;
+                current2 = current2->next;
             }
-            *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
-            //printf("-------- funcRetParamCnt %i\n", *rParamCnt);
+            if (current1 != NULL || current2 != NULL) { // Musí sedět počet návratových hodnot
+                print_err(ERR_SEM_FUNC);
+                exit(ERR_SEM_FUNC);
+            }
+            funcNode->localTS = localTS; // Tabulka symbolů se nahradí - TODO: Možná dealokovat předchozí tabulku
+            funcNode->isDefined = true;
         }
+        else { // Pokud se nejedná o definici funkce
+            RetType *current = funcNode->retTypes;
+            while (isUsedList != NULL && current != NULL) {
+                if (isUsedList->type != current->type) {
+                    if (current->type == UNKNOWN) {
+                        current->type = isUsedList->type;
+                    }
+                    else if (isUsedList->type != UNKNOWN) {
+                        print_err(ERR_SEM_FUNC);
+                        exit(ERR_SEM_FUNC);
+                    }
+                }
+                isUsedList = isUsedList->next;
+                current = current->next;
+            }
+            if (isUsedList != NULL || current != NULL) { // Musí sedět počet návratových hodnot
+                print_err(ERR_SEM_FUNC);
+                exit(ERR_SEM_FUNC);
+            }
+        }
+        *rParamCnt = countRetTypes(funcNode); //Vrací počet návratových hodnot dané funkce
+        //printf("-------- funcRetParamCnt %i\n", *rParamCnt);
     }
 }
 
-int TSCompare(TNode* firstNode, TNode* secondNode) {
-    if (firstNode != NULL && secondNode != NULL) {
-        //printf("1) %s: par: %i, type: %i | 2) %s: par: %i, type: %i\n", firstNode->key, firstNode->param, firstNode->type, secondNode->key, secondNode->param, secondNode->type);
-   
-        if (firstNode->param == secondNode->param && firstNode->type == secondNode->type) {
-            return TSCompare(firstNode->lptr, secondNode->lptr) || TSCompare(firstNode->rptr, secondNode->rptr);
-        }
-        else return 1;
+bool TSCompare(TNode* firstNode, TNode* secondNode) {
+    for (int i = 0; true; i++) {
+        TNode *first = TSSearchByParam(firstNode, i);
+        TNode *second = TSSearchByParam(secondNode, i);
+
+        if (first == NULL && second == NULL)
+            return true;
+
+        else if (first == NULL || second == NULL)
+            return false;
+        
+        if (first->type != second->type)
+            return false;
     }
-    else return 0;
 }
 
 void TStackInit(TStack* stack) {

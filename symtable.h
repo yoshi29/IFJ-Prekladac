@@ -187,7 +187,7 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
  * @param firstNode
  * @param secondNode
  */
-int TSCompare(TNode* firstNode, TNode* secondNode);
+bool TSCompare(TNode* firstNode, TNode* secondNode);
 
 /**
  * Inicializace zásobníku tabulek symbolů

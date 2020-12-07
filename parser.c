@@ -51,16 +51,55 @@ int parse(FILE* file) {
 }
 
 void insert_built_in_funcs() { //TODO: Ještě stále nejisté, jak to přesně v tabulkce symbolů bude
-    TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
-    addMultipleRetType(&TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL)->retTypes, 2, STRING, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL)->retTypes, 2, INT, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL)->retTypes, 2, FLOAT, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL)->retTypes, 1, FLOAT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "float2int", FUNC, true, 1, NULL)->retTypes, 1, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL)->retTypes, 1, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL)->retTypes, 2, STRING, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL)->retTypes, 2, INT, INT);
-    addMultipleRetType(&TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL)->retTypes, 2, STRING, INT);  
+    TNode *func = NULL;
+
+    // func print(term1, term2, ... , termN)
+    func = TSInsert(&(stack.top->node), "print", FUNC, true, -1, NULL); //TODO: -1 by mohlo značit, že má n parametrů ??
+    
+    // func inputs() (string, int)
+    func = TSInsert(&(stack.top->node), "inputs", FUNC, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 2, STRING, INT);
+    
+    // func inputi() (int, int)
+    func = TSInsert(&(stack.top->node), "inputi", FUNC, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 2, INT, INT);
+
+    // func inputf() (float64, int)
+    func = TSInsert(&(stack.top->node), "inputf", FUNC, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 2, FLOAT, INT);
+
+    // func int2float(i int) (float64)
+    func = TSInsert(&(stack.top->node), "int2float", FUNC, true, 1, NULL);
+    TSInsert(&(func->localTS), "i", INT, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 1, FLOAT);
+
+    // func float2int(f float64) (int)
+    func = TSInsert(&(stack.top->node), "float2int", FUNC, true, 1, NULL);
+    TSInsert(&(func->localTS), "f", FLOAT, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 1, INT);
+
+    // func len(s string) (int)
+    func = TSInsert(&(stack.top->node), "len", FUNC, true, 1, NULL);
+    TSInsert(&(func->localTS), "s", STRING, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 1, INT);
+
+    // func substr(s string, i int, n int) (string, int)
+    func = TSInsert(&(stack.top->node), "substr", FUNC, true, 3, NULL);
+    TSInsert(&(func->localTS), "s", STRING, true, 0, NULL);
+    TSInsert(&(func->localTS), "i", INT, true, 1, NULL);
+    TSInsert(&(func->localTS), "n", INT, true, 2, NULL);
+    addMultipleRetType(&(func->retTypes), 2, STRING, INT);
+
+    // func ord(s string, i int) (int, int)
+    func = TSInsert(&(stack.top->node), "ord", FUNC, true, 2, NULL);
+    TSInsert(&(func->localTS), "s", STRING, true, 0, NULL);
+    TSInsert(&(func->localTS), "i", INT, true, 1, NULL);
+    addMultipleRetType(&(func->retTypes), 2, INT, INT);
+
+    // func chr(i int) (string, int)
+    func = TSInsert(&(stack.top->node), "chr", FUNC, true, 1, NULL);
+    TSInsert(&(func->localTS), "i", INT, true, 0, NULL);
+    addMultipleRetType(&(func->retTypes), 2, STRING, INT);
 
     generateBuiltInFunctions();
 }
@@ -135,7 +174,11 @@ int def_func() {
         strInit(&funcName);
         strCopyString(&funcName, &(token->string));
         generateFuncStart(funcName.str); //-- Generování začátku funkce
-
+        
+        TNode* func = TSSearch(stack.bottom->node, funcName.str);
+        if (func != NULL && func->isDefined == true)
+            return ERR_SEM_DEF;
+        
         if (strCmpConstStr(&funcName, "main") == 0) isMain = 1;
 
         if (getToken()->type == L_BRACKET) { 
@@ -372,11 +415,27 @@ int body() { //DONE ^^
 
 int return_f() { //DONE ^^
     int rParamCnt = 0; //Počítadlo návratových hodnot
-    int retVal = return_val(&rParamCnt);
+    
+    RetType *retType = NULL;
+
+    int retVal = return_val(&rParamCnt, &retType);
     if (retVal == SUCCESS) {
         if (token->type == EOL_T) {
+            // Kontrola datových typů u 'return' oproti definici funkce
+            RetType* funcRetTypes = currentFuncNode->retTypes;
+            while (funcRetTypes != NULL && retType != NULL) {
+                if (funcRetTypes->type != retType->type) // Pokud se liší datové typy
+                    return ERR_SEM_FUNC;
+
+                funcRetTypes = funcRetTypes->next;
+                retType = retType->next;
+            }
+            if (funcRetTypes != NULL || retType != NULL) // Pokud je špatný počet návratových hodnot
+                return ERR_SEM_FUNC;
+
             getNonEolToken();
             //printf("RETURN_F: %i\n", 0);
+
             if (rParamCnt != countRetTypes(currentFuncNode)) return ERR_SEM_FUNC;
             return SUCCESS;
         }
@@ -388,14 +447,15 @@ int return_f() { //DONE ^^
     }
 }
 
-int return_val(int* retParamCnt) { 
+int return_val(int* retParamCnt, RetType** retType) { 
     int data_type, paramCnt; 
     int retVal = psa(&data_type, &paramCnt, retParamCnt, false, NULL); //Psa může zvýšit paramCnt
     if (retVal != SUCCESS) return retVal;
     if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+    addRetType(retType, (nodeType)data_type);
     *retParamCnt = *retParamCnt + 1;
     generateRetVal(*retParamCnt, psa_var_cnt);
-    retVal = ids_exprs_opt(retParamCnt, true, NULL);
+    retVal = ids_exprs_opt(retParamCnt, true, NULL, retType);
     if (retVal == -1) retVal = SUCCESS;
     return retVal;
 }
@@ -589,9 +649,8 @@ int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList
         generateBeforeParamPass(); //TODO: Nebude tu navíc, pokud bude funkce bez parametrů?
         retVal = params(paramCnt, &localTS, funcName);
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
-
         //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
-        TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt, isUsedList, NULL, false); //bude-li už definovaná, kontrola typů/pořadí/počtu parametrů - (pokud bude sedět, přepis klíčů na reálně použité?; 
+        TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt, isUsedList, NULL, false); 
         generateFuncCall(funcName); //-- Generování volání funkce
         getNextToken();
     }
@@ -611,17 +670,12 @@ int params(int *paramCnt, TNode** localTS, char* funcName) {
 
             TSExitIfNotDefined(stack.top, idName.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
             TNode* paramNode = TSSearchStackExceptFunc(stack.top, idName.str);
-            TSInsert(localTS, idName.str, paramNode->type, funcName, *paramCnt, NULL); //TODO: Před vložením musí proběhnout kontrola typů
+            TSInsert(localTS, idName.str, paramNode->type, false, *paramCnt, NULL);
         }
         else {
-            TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt);
-            if (paramNode != NULL) {
-                TSInsert(localTS, paramNode->key, nodeTypeFromTokenType(token->type), true, *paramCnt, NULL);
-            }
-            else {
-                //TODO: Musí proběhnout pozdější kontrola, protože dunkce ještě nebyla definována,
-                //Informace o tom, jaký je parametr funkce by se někam měla uložit tak i tak
-            }
+            char str[getStrSize(*paramCnt)];
+            sprintf(str, "%d", *paramCnt);
+            TSInsert(localTS, str, nodeTypeFromTokenType(token->type), false, *paramCnt, NULL);
         }
         *paramCnt = *paramCnt + 1; //Načten další parametr funkce
         generateParamPass(*paramCnt, token); //-- Generování proměnné v dočasném rámci
@@ -639,20 +693,25 @@ int params_opt(int* paramCnt, TNode** localTS, char* funcName) {
         getToken();
         if (token->type == ID || token->type == FLOAT_T || token->type == INT_T || token->type == STRING_T) {
             if (token->type == ID) {
-                TSExitIfNotDefined(stack.top, token->string.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
-                //TODO: Nutné vyhledat datový typ ID
+                string idName;
+                strInit(&idName);
+                strCopyString(&idName, &(token->string));
+
+                TSExitIfNotDefined(stack.top, idName.str, false); //Nelze použít nedefinovaný identifikátor jako parametr
+                TNode *paramNode = TSSearchStackExceptFunc(stack.top, idName.str);
+                TSInsert(localTS, idName.str, paramNode->type, false, *paramCnt, NULL);
             }
             else {
-                TNode *paramNode = TSSearchByNameAndParam(stack.bottom->node, funcName, *paramCnt); //TODO: Pokud je NULL, funkce ještě nebyla definována
-                if (paramNode != NULL) {
-                    TSInsert(localTS, paramNode->key, nodeTypeFromTokenType(token->type), true, *paramCnt, NULL);
-                }
+                char str[getStrSize(*paramCnt)];
+                sprintf(str, "%d", *paramCnt);
+                TSInsert(localTS, str, nodeTypeFromTokenType(token->type), false, *paramCnt, NULL);
             }
             *paramCnt = *paramCnt + 1;
             generateParamPass(*paramCnt, token); //-- Generování proměnné v dočasném rámci
             getToken();
             retVal = params_opt(paramCnt, localTS, funcName);
         }
+        else retVal = ERR_SYNTAX;
     }
 
     //printf("IDS_OPT: %i\n", retVal);
@@ -674,7 +733,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
                 int scope = TSSearchStackAndReturnScope(stack.top, isUsedList->varName);
                 if (scope != -1) generateRetValAssignment(isUsedList->varName, scope, i);
             }
-            else
+            else if (isUsedList == NULL)
                 return ERR_SEM_OTHER;
                 
             isUsedList = isUsedList->next;
@@ -693,7 +752,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     }
     
     if (funcParamCnt != -1 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
-    retVal = ids_exprs_opt(&rParamCnt, false, isUsedList); //Počítání dalších možných ID na pravé straně přiřazení
+    retVal = ids_exprs_opt(&rParamCnt, false, isUsedList, NULL); //Počítání dalších možných ID na pravé straně přiřazení
     //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
     
     if (retVal == -1) return ERR_SYNTAX;
@@ -707,7 +766,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     return retVal;
 }
 
-int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
+int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList, RetType** retType) {
     int retVal = SUCCESS;
 
     if (token->type == COMMA) {
@@ -731,9 +790,15 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList) {
         }
         if (retVal != SUCCESS) return retVal;
         if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+        
         *rParamCnt = *rParamCnt + 1; 
-        if (isReturn) generateRetVal(*rParamCnt, psa_var_cnt);
-        retVal = ids_exprs_opt(rParamCnt, isReturn, isUsedList);
+        if (isReturn) {
+            generateRetVal(*rParamCnt, psa_var_cnt);
+            
+            if (retType != NULL)
+                addRetType(retType, (nodeType)data_type);
+        }
+        retVal = ids_exprs_opt(rParamCnt, isReturn, isUsedList, retType);
     }
 
     //printf("IDS_EXPR_OPT: %i\n", retVal);
