@@ -141,9 +141,17 @@ void generateParamPass(int paramPos, Token* token) {
 	else if (token->type == ID) {
 		int scope;
 		TNode* idNode = TSSearchStackAndReturn(stack.top, token->string.str, &scope);
-		char scopeStr[getStrSize(scope)];
-		sprintf(scopeStr, "%i", scope);
-		printCode(6, "MOVE TF@%", pos, " ", "LF@", idNode->key, scopeStr);
+
+		if (scope == 0) { // Jedná se o formální parametr funkce
+			char suffixStr[getStrSize(paramPos)];
+			sprintf(suffixStr, "%i", paramPos);
+			printCode(5, "MOVE TF@%", pos, " ", "LF@%param", suffixStr);
+		}
+		else { // Jedná se o lokální proměnnou
+			char scopeStr[getStrSize(scope)];
+			sprintf(scopeStr, "%i", scope);
+			printCode(6, "MOVE TF@%", pos, " ", "LF@", idNode->key, scopeStr);
+		}
 	}
 	else { //Načten nesprávný token
 		print_err(ERR_SYNTAX);
@@ -290,7 +298,6 @@ void generateBuiltInFunctions() {
 	generateInputs();
 	generateInputi();
 	generateInputf();
-	generatePrint();
 }
 
 void generateInt2Float() {
@@ -500,7 +507,11 @@ void generateInputf() {
 	generateFuncEnd("inputf");
 }
 
-void generatePrint() {
-	generateFuncStart("print");
-	generateFuncEnd("print");
+void generatePrintCall(int param) {
+
+	for (int i = 1; i <= param; i++) {
+		char suffixStr[getStrSize(i)];
+		sprintf(suffixStr, "%i", i);
+		printCode(4, "WRITE", " ", "TF@%", suffixStr);
+	}
 }

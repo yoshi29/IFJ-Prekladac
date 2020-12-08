@@ -650,8 +650,13 @@ int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList
         retVal = params(paramCnt, &localTS, funcName);
         if (retVal == ERR_SYNTAX || token->type != R_BRACKET) return ERR_SYNTAX;
         //printf("---- Volána funkce: %s, paramCnt: %i\n", funcName, *paramCnt);
-        TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt, isUsedList, NULL, false); 
-        generateFuncCall(funcName); //-- Generování volání funkce
+        TSInsertFuncOrCheck(stack.bottom, funcName, *paramCnt, localTS, retParamCnt, isUsedList, NULL, false);
+        
+        if (strcmp(funcName, "print") == 0)
+            generatePrintCall(*paramCnt);
+        else
+            generateFuncCall(funcName);
+
         getNextToken();
     }
 

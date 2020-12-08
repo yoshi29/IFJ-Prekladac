@@ -220,6 +220,6 @@ void generateInputi();
 void generateInputf();
 
 /*
- * Vygeneruje vestavěnou funkci print
- */
-void generatePrint();
+ * Vygeneruje print
+*/
+void generatePrintCall(int param);

@@ -227,7 +227,21 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
         }
     }
     else { // Na funkci jsme již narazili
-        if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
+        
+        if (strcmp(funcNode->key, "print") == 0) { // Je volána funkce print
+            *rParamCnt = 0;
+
+            if (def) { // Funkci print nelze redefinovat
+                print_err(ERR_SEM_DEF);
+                exit(ERR_SEM_DEF);
+            }
+            if (isUsedList != NULL) { // Funkce print nemá návratové hodnoty
+                print_err(ERR_SEM_FUNC);
+                exit(ERR_SEM_FUNC);
+            }
+
+            return;
+        }
         
         else if (TSCompare(funcNode->localTS, localTS) == false) {
             print_err(ERR_SEM_FUNC);
