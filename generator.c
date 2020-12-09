@@ -50,6 +50,7 @@ void generateFuncStart(char* funcName) {
 
 void generateFuncEnd(char* funcName) {
 	if (strcmp(funcName, "main") != 0) {
+		printCode(5, "LABEL", " ", "$", funcName, "-end");
 		printCode(3, "POPFRAME", " # ---------- End of function ", funcName);
 		printInstr("RETURN");
 	}
@@ -143,8 +144,8 @@ void generateParamPass(int paramPos, Token* token) {
 		TNode* idNode = TSSearchStackAndReturn(stack.top, token->string.str, &scope);
 
 		if (scope == 0) { // Jedná se o formální parametr funkce
-			char suffixStr[getStrSize(paramPos)];
-			sprintf(suffixStr, "%i", paramPos);
+			char suffixStr[getStrSize(idNode->param + 1)];
+			sprintf(suffixStr, "%i", idNode->param + 1);
 			printCode(5, "MOVE TF@%", pos, " ", "LF@%param", suffixStr);
 		}
 		else { // Jedná se o lokální proměnnou

@@ -421,6 +421,10 @@ int return_f() { //DONE ^^
     int retVal = return_val(&rParamCnt, &retType);
     if (retVal == SUCCESS || retVal == -1) {
         if (token->type == EOL_T) {
+            if (strcmp(currentFuncNode->key, "main") == 0)
+                printInstr("JUMP $$main-exit");
+            else
+                printCode(5, "JUMP", " ", "$", currentFuncNode->key, "-end");
             // Kontrola datových typů u 'return' oproti definici funkce
             RetType* funcRetTypes = currentFuncNode->retTypes;
             while (funcRetTypes != NULL && retType != NULL) {
