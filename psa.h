@@ -57,13 +57,6 @@ typedef enum {
 int psa(int* data_type, int* paramCnt, int* rParamCnt, bool parseFunc, IsUsedList* isUsedList);
 
 /**
- * Zjistí, zda daný token je operátor
- * @param token Ukazatel na token
- * @return Vrací 1 pokud se jedná o operátor, jinak 0
- */
-int is_operator(Token *token);
-
-/**
  * Zjistí, zda má daný token ukončovat PSA
  * @param token Ukazatel na token
  * @return Vrací 1 pokud token ukončuje PSA, jinak 0

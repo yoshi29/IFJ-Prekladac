@@ -70,12 +70,6 @@ TNode* TSSearch(TNode* root, char* key) {
     }
 }
 
-TNode* TSSearchByNameAndParam(TNode* root, char* funcName, int paramPos) {
-    TNode* node = TSSearch(root, funcName);
-    if (node == NULL) return NULL;
-    return TSSearchByParam(node->localTS, paramPos);
-}
-
 TNode* TSSearchByParam(TNode* root, int paramPos) {
     if (root == NULL) return NULL;
 
@@ -190,21 +184,6 @@ int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key) {
     return scope;
 }
 
-/*
-int TSSearchInLocalTS(TNode* node, char* key) {
-    if (node != NULL) {
-        if (node->localTS != NULL) {
-            if (TSSearch(node->localTS, key) != NULL) return 1;
-            else return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
-        }
-        else {
-            return (TSSearchInLocalTS(node->lptr, key) || TSSearchInLocalTS(node->rptr, key)); //Zkusí najít v lokálních tabulkách levého a pravého syna
-        }
-    }
-    else return 0;
-}
-*/
-
 void TSInsertOrExitOnDuplicity(TNode** root, char* key, nodeType type, bool isDefined, int param, TNode* localTS) {
     if (TSSearch(*root, key) != NULL) { //Klíč již je v tabulce symbolů - redefinice
         print_err(ERR_SEM_DEF);
@@ -248,7 +227,21 @@ void TSInsertFuncOrCheck(TStack_Elem* stackElem, char* key, int param, TNode* lo
         }
     }
     else { // Na funkci jsme již narazili
-        if (funcNode->param == -1) *rParamCnt = 0; //Je volána funkce, která nemá pevně daný počet parametrů
+        
+        if (strcmp(funcNode->key, "print") == 0) { // Je volána funkce print
+            *rParamCnt = 0;
+
+            if (def) { // Funkci print nelze redefinovat
+                print_err(ERR_SEM_DEF);
+                exit(ERR_SEM_DEF);
+            }
+            if (isUsedList != NULL) { // Funkce print nemá návratové hodnoty
+                print_err(ERR_SEM_FUNC);
+                exit(ERR_SEM_FUNC);
+            }
+
+            return;
+        }
         
         else if (TSCompare(funcNode->localTS, localTS) == false) {
             print_err(ERR_SEM_FUNC);

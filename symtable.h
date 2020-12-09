@@ -86,14 +86,6 @@ TNode* TSInsert(TNode** root, char* key, nodeType type, bool isDefined, int para
 TNode* TSSearch(TNode* root, char* key);
 
 /**
- * Vyhledá prvek v lokální tabulce symbolů funkce daného jména dle pozice parametru
- * @param root Ukazatel na kořen stromu
- * @param funcName Jméno vyhledávané funkce
- * @param paramPos Vyhledávaná hodnota
- */
-TNode* TSSearchByNameAndParam(TNode* root, char* funcName, int paramPos);
-
-/**
  * Rekurzivně vyhledá prvek dle počtu parametrů, nebo pozice parametru, pokud je předána lokální tabulka funkce
  * @param root Ukazatel na kořen stromu
  * @param paramPos Vyhledávaná hodnota
@@ -120,6 +112,7 @@ int TSAllMeetsConditions(TNode* root, nodeType type, bool isDefined);
 
 /**
  * Zruší celý strom
+ * @param root Ukazatel na kořen stromu
  */
 void TSDispose(TNode* root);
 
@@ -132,14 +125,6 @@ void TSDispose(TNode* root);
 int TSSearchStack(TStack_Elem* stackElem, char* key);
 
 /**
- * Hledá klíč v rámci lokálních tabulek tabulky symbolů
- * @param node Tabulka symbolů
- * @param key Hledaný klíč
- * @return 1 v případě nalezení klíče, 0 jinak
- */
-int TSSearchInLocalTS(TNode* node, char* key);
-
-/**
  * Hledá klíč v rámci celého zásobníku, ovšem ignorují se klíče s typem FUNC.
  * @param node Tabulka symbolů
  * @param key Hledaný klíč
@@ -147,6 +132,12 @@ int TSSearchInLocalTS(TNode* node, char* key);
  */
 TNode* TSSearchStackExceptFunc(TStack_Elem* stackElem, char* key);
 
+/**
+ * Hledá klíč v rámci celého zásobníku
+ * @param stackElem Prvek zásobníku
+ * @param key Hledaný klíč
+ * @return Vrátí číslo zásobníku, ve kterém se nachází hledaný prvek
+ */
 int TSSearchStackAndReturnScope(TStack_Elem* stackElem, char* key);
 
 /**
