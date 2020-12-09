@@ -256,9 +256,9 @@ int reduce(PSA_Stack *s, int rule)
         sprintf(op2_num, "%d", current->var_count);
 
         if (current->node_type == INT)
-            printCode(6, "DIV LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
-        else
             printCode(6, "IDIV LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
+        else
+            printCode(6, "DIV LF@*E", var_num, " LF@*E", op1_num, " LF@*E", op2_num);
 
         stack_pop_n(s, 2);
         current = stack_top(s);
@@ -447,6 +447,8 @@ int reduce(PSA_Stack *s, int rule)
                 sprintf(id_num, "%d", scope);
                 printCode(5, "MOVE LF@*E", var_num, " LF@", current->string.str, id_num);
             }
+            current->intNumber = 1;
+            current->floatNumber = 1.0;
         }
         else if (current->token_type == INT_T)
         {

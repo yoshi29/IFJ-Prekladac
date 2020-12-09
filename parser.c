@@ -451,7 +451,7 @@ int return_val(int* retParamCnt, RetType** retType) {
     int data_type, paramCnt; 
     int retVal = psa(&data_type, &paramCnt, retParamCnt, false, NULL); //Psa může zvýšit paramCnt
     if (retVal != SUCCESS) return retVal;
-    if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+    if (data_type == BOOL) return ERR_SEM_COMP; // Výsledkem nesmí být pravdivostní hodnota
     addRetType(retType, (nodeType)data_type);
     *retParamCnt = *retParamCnt + 1;
     generateRetVal(*retParamCnt, psa_var_cnt);
@@ -467,7 +467,7 @@ int if_f() {
     int retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
     if (retVal == -1) return ERR_SYNTAX; //Nezadán výraz => chyba
     if (retVal != SUCCESS) return retVal;
-    if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
+    if (data_type != BOOL) return ERR_SEM_COMP; // Výsledkem musí být pravdivostní hodnota
     generateIfJump(cnt, psa_var_cnt); // If podmínka
     if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
         PushFrame(&stack); //Začátek těla if
@@ -495,7 +495,7 @@ int for_f() {
     int cnt = forCnt++;
     printInstr("# --------- FOR start");
     int retVal = def();
-    if (retVal != SUCCESS) return retVal;
+    if (retVal != SUCCESS && retVal != -1) return retVal;
 
     if (token->type == SEMICOLON) {
         generateLabel("for-start", cnt);
@@ -505,7 +505,7 @@ int for_f() {
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
         if (retVal == -1) return ERR_SYNTAX; //Nezadán výraz => chyba
         if (retVal != SUCCESS) return retVal;
-        if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
+        if (data_type != BOOL) return ERR_SEM_COMP; // Výsledkem musí být pravdivostní hodnota
         generateForJump(cnt, psa_var_cnt); // For podmínka
         generateJump("for-body", cnt);
         generateLabel("for-assign", cnt);
@@ -520,7 +520,7 @@ int for_f() {
                 PushFrame(&stack); //Začátek těla for
                 getNonEolToken();
                 retVal = body();
-                if (retVal != SUCCESS) return SUCCESS;
+                if (retVal != SUCCESS && retVal != -1) return SUCCESS;
                 if (token->type != RC_BRACKET) return ERR_SYNTAX;
                 generateJump("for-assign", cnt);
                 generateLabel("for-end", cnt);
@@ -563,7 +563,7 @@ int def_var(char* idName) {
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
         if (retVal == -1) retVal = ERR_SYNTAX;
-        if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+        if (data_type == BOOL) return ERR_SEM_COMP; // Výsledkem nesmí být pravdivostní hodnota
         TSInsertOrExitOnDuplicity(&(stack.top->node), idName, data_type, true, 0, NULL);
 
         generateVariable(idName, stack.top->scope, psa_var_cnt); //-- Vygenerování definice proměnné
@@ -586,7 +586,7 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
     else if (token->type == DEF) { //<after_id> → <def_var>
         retVal = def_var(idName);
     }
-    else { //<after_id> → <ids_lo> = <assign_r>
+    else if (token->type == EQUALS || token->type == COMMA) { //<after_id> → <ids_lo> = <assign_r>
         TSExitIfNotDefined(stack.top, idName, false); //Kontrola, jestli nepřiřazujeme do nedefinované proměnné
         /*if (token->type == ID) addPos(isUsedList, true, idName);
         else if (token->type == UNDERSCORE) addPos(isUsedList, false, "");*/
@@ -595,6 +595,8 @@ int after_id(char* idName, int* lParamCnt, IsUsedList *isUsedList) { //DONE ^^
         getToken();
         retVal = assign_r(lParamCnt, isUsedList);
     }
+    else
+        return ERR_SYNTAX;
 
     //printf("AFTER_ID: %i\n", retVal);
     return retVal;
@@ -644,6 +646,12 @@ int ids_l_opt(int* lParamCnt, IsUsedList *isUsedList) {
 int func(int* retParamCnt, int* paramCnt, char* funcName, IsUsedList* isUsedList) { //DONE ^^
     int retVal = ERR_SYNTAX;
     TNode* localTS = NULL;
+
+    TNode *node = TSSearch(stack.top->node, funcName);
+    if (node != NULL) {
+        if (node->type != FUNC && node->isDefined == true)
+            return ERR_SEM_OTHER; // Volá se funkce, která je překrytá proměnnou
+    }
 
     if (token->type == L_BRACKET) {
         *paramCnt = 0;
@@ -732,7 +740,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     int retVal = psa(&data_type, &funcParamCnt, &rParamCnt, true, isUsedList);
     if (retVal == -1) return ERR_SYNTAX;
     if (retVal != SUCCESS) return retVal;
-    if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+    if (data_type == BOOL) return ERR_SEM_COMP; // Výsledkem nesmí být pravdivostní hodnota
 
     if (funcParamCnt != -1) { //Následuje přiřazování hodnot vrácených z funkce
         for (int i = 1; i < rParamCnt+1; i++) { //i = 1, rParamCnt+1 protože proměnné s návratovými hodnotami jsou číslovány od 1
@@ -761,8 +769,7 @@ int assign_r(int* lParamCnt, IsUsedList* isUsedList) {
     if (funcParamCnt != -1 && token->type != EOL_T) return ERR_SEM_OTHER; //Pokud se přiřazuje výstup funkce, nesmí již následovat další přiřazované hodnoty
     retVal = ids_exprs_opt(&rParamCnt, false, isUsedList, NULL); //Počítání dalších možných ID na pravé straně přiřazení
     //printf("--- Přiřazení lParam %i : rParam %i\n", *lParamCnt, rParamCnt);
-    
-    if (retVal == -1) return ERR_SYNTAX;
+
     if (retVal != SUCCESS) return retVal;
     
     if (*lParamCnt != rParamCnt) {
@@ -795,8 +802,9 @@ int ids_exprs_opt(int* rParamCnt, bool isReturn, IsUsedList* isUsedList, RetType
                 if (scope != -1) generateValAssignment(isUsedList->varName, scope, psa_var_cnt);
             }
         }
+        if (retVal == -1) return ERR_SYNTAX;
         if (retVal != SUCCESS) return retVal;
-        if (data_type == BOOL) return ERR_SEM_OTHER; // Výsledkem nesmí být pravdivostní hodnota
+        if (data_type == BOOL) return ERR_SEM_COMP; // Výsledkem nesmí být pravdivostní hodnota
         
         *rParamCnt = *rParamCnt + 1; 
         if (isReturn) {

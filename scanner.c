@@ -253,9 +253,9 @@ int getNextToken(){
                 if (c == '*') { // přechod do Q3
                     state = M_LINE_C_END_STATE;
                 }
-                else if (c == EOF) { // přechod do F3
-                    token->type = EOF_T;
-                    state = START_STATE;
+                else if (c == EOF) {
+                    strFree(&s);
+                    return ERR_LEXICAL;
                 }
             break;
 
@@ -264,9 +264,9 @@ int getNextToken(){
                     state = START_STATE;
                     continue; // Komentář se přeskočí, SUCCESS se nevrátí
                 }
-                else if (c == EOF) { // přechod do F3
-                    token->type = EOF_T;
-                    state = START_STATE;
+                else if (c == EOF) {
+                    strFree(&s);
+                    return ERR_LEXICAL;
                 }
                 else { // zůstane v Q2
                     state = M_LINE_C_STATE;
