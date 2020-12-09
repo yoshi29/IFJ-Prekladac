@@ -1,6 +1,7 @@
 /**
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Jana Stopková, xstopk01
+ *        Filip Vágner, xvagne08
  */
 
 #include "generator.h"
@@ -270,18 +271,39 @@ void generateForAllParams(TNode* root, bool start) {
 	}
 }
 
-void generateForFrame(bool start) {
+void generateForAllRetVals(RetType* retType, bool start) {
+	RetType *current = retType;
+	for (int i = 1; current != NULL; i++) {
+		char suffixStr[getStrSize(i)];
+		sprintf(suffixStr, "%i", i);
+		if (start) {
+			printCode(2, "DEFVAR TF@%retval", suffixStr);
+			printCode(5, "MOVE TF@%retval", suffixStr, " ", "LF@%retval", suffixStr);
+		}
+		else {
+			printCode(5, "MOVE LF@%retval", suffixStr, " ", "TF@%retval", suffixStr);
+		}	
+		current = current->next;
+	}
+}
+
+void generateForFrame(bool start, int from) {
 	if (start)
 		printInstr("CREATEFRAME");
 	else
 		printInstr("POPFRAME");
 
 	TStack_Elem* current_frame = stack.top;
+	for (int i = 0; i < from && current_frame != NULL; i++) {
+		current_frame = current_frame->next->next;
+	}
+		
 	while (current_frame != NULL) {
 		generateForAllVars(current_frame->node, current_frame->scope, start);
 		current_frame = current_frame->next;
 	}
 	generateForAllParams(currentFuncNode->localTS, start);
+	generateForAllRetVals(currentFuncNode->retTypes, start);
 
 	if (start)
 		printInstr("PUSHFRAME");

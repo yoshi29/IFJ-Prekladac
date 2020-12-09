@@ -10,6 +10,7 @@ int returnedSth;
 
 int ifCnt = 0;
 int forCnt = 0;
+int forScope = 0;
 
 Token* getToken() { 
     int retVal = getNextToken();
@@ -421,10 +422,15 @@ int return_f() { //DONE ^^
     int retVal = return_val(&rParamCnt, &retType);
     if (retVal == SUCCESS || retVal == -1) {
         if (token->type == EOL_T) {
+
+            for (int i = 0; i < forScope; i++)
+                generateForFrame(false, i);
+                
             if (strcmp(currentFuncNode->key, "main") == 0)
                 printInstr("JUMP $$main-exit");
             else
                 printCode(5, "JUMP", " ", "$", currentFuncNode->key, "-end");
+                
             // Kontrola datových typů u 'return' oproti definici funkce
             RetType* funcRetTypes = currentFuncNode->retTypes;
             while (funcRetTypes != NULL && retType != NULL) {
@@ -496,6 +502,7 @@ int if_f() {
 }
 
 int for_f() {
+    forScope++;
     int cnt = forCnt++;
     printInstr("# --------- FOR start");
     int retVal = def();
@@ -503,7 +510,7 @@ int for_f() {
 
     if (token->type == SEMICOLON) {
         generateLabel("for-start", cnt);
-        generateForFrame(true); // Vygeneruj nový TF, vlož do něj proměnné a udělej z něho LF
+        generateForFrame(true, 0); // Vygeneruj nový TF, vlož do něj proměnné a udělej z něho LF
         getToken();
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
@@ -517,7 +524,7 @@ int for_f() {
             getToken();
             retVal = assign();
             if (retVal != SUCCESS) return retVal;
-            generateForFrame(false); // Z LF udělej TF a aktualizuj proměnné
+            generateForFrame(false, 0); // Z LF udělej TF a aktualizuj proměnné
             generateJump("for-start", cnt);
             generateLabel("for-body", cnt);
             if (token->type == LC_BRACKET && getToken()->type == EOL_T) {
@@ -529,7 +536,7 @@ int for_f() {
                 generateJump("for-assign", cnt);
                 generateLabel("for-end", cnt);
                 PopFrame(&stack); //Konec těla for
-                generateForFrame(false); // Z LF udělej TF a aktualizuj proměnné
+                generateForFrame(false, 0); // Z LF udělej TF a aktualizuj proměnné
                 PopFrame(&stack); //Konec definiční části for cyklu
                 printInstr("# --------- FOR end");
                 getToken();
@@ -539,6 +546,7 @@ int for_f() {
         else return ERR_SYNTAX;
     }
     else return ERR_SYNTAX;
+    forScope--;
     return retVal;
 }
 

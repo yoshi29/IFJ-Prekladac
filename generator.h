@@ -1,6 +1,7 @@
 /**
  * Projekt: Implementace překladače imperativního jazyka IFJ20
  * Autor: Jana Stopková, xstopk01
+          Filip Vágner, xvagne08
  */
 
 #pragma once
@@ -149,13 +150,16 @@ void generateForAllVars(TNode* root, int scope, bool start);
 
 void generateForParam(int scope, bool start);
 
+void generateForAllRetVals(RetType *retType, bool start);
+
 void generateForAllParams(TNode* root, bool start);
 
 /*
  * Vygeneruje nový rámec pro for (jedná-li se o začátek foru) a nebo ho odstraní (jedná-li se o konec)
  * @param start true, pokud se jedná o začátek foru, jinak false
+ * @param from Určuje, od jakého rámce se má začít (0 = aktuální rámec)
  */
-void generateForFrame(bool start);
+void generateForFrame(bool start, int from);
 
 /*
  * Vygeneruje podmíněný skok pro for
