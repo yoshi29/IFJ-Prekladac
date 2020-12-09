@@ -9,8 +9,8 @@ int main() {
     FILE* file = stdin;
 
     int retVal = parse(file);
-    //printf(">> PARSING: %i\n", retVal);
-    print_err(retVal); //Zatím pro test
+    //fprintf(stderr, ">> PARSING: %i\n", retVal);
+    //print_err(retVal); //Zatím pro test
     return retVal;
 }
 

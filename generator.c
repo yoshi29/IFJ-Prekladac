@@ -455,6 +455,7 @@ void generateInputs() {
 	printInstr(
 		"DEFVAR LF@%retval1\n"
 		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
 		"DEFVAR LF@%type\n"
 		"DEFVAR LF@%err\n"
 
@@ -474,6 +475,7 @@ void generateInputi() {
 	printInstr(
 		"DEFVAR LF@%retval1\n"
 		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
 		"DEFVAR LF@%type\n"
 		"DEFVAR LF@%err\n"
 
@@ -493,6 +495,7 @@ void generateInputf() {
 	printInstr(
 		"DEFVAR LF@%retval1\n"
 		"DEFVAR LF@%retval2\n"
+		"MOVE LF@%retval2 int@0\n"
 		"DEFVAR LF@%type\n"
 		"DEFVAR LF@%err\n"
 

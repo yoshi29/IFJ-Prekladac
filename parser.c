@@ -290,7 +290,7 @@ int func_ret_types(int isMain, RetType** retType) { //DONE ^^
         getToken();
 
         retVal = types(isMain, retType);
-        if (retVal != SUCCESS && token->type != R_BRACKET) return ERR_SYNTAX;
+        if (retVal != SUCCESS && token->type != R_BRACKET) return ERR_SEM_FUNC;
         getToken();
     }
 
@@ -465,6 +465,7 @@ int if_f() {
     int cnt = ifCnt++;
     int data_type, paramCnt, rParamCnt; //Zde nevyužito
     int retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
+    if (retVal == -1) return ERR_SYNTAX; //Nezadán výraz => chyba
     if (retVal != SUCCESS) return retVal;
     if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
     generateIfJump(cnt, psa_var_cnt); // If podmínka
@@ -502,6 +503,7 @@ int for_f() {
         getToken();
         int data_type, paramCnt, rParamCnt;
         retVal = psa(&data_type, &paramCnt, &rParamCnt, false, NULL);
+        if (retVal == -1) return ERR_SYNTAX; //Nezadán výraz => chyba
         if (retVal != SUCCESS) return retVal;
         if (data_type != BOOL) return ERR_SEM_OTHER; // Výsledkem musí být pravdivostní hodnota
         generateForJump(cnt, psa_var_cnt); // For podmínka
